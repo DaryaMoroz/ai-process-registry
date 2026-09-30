@@ -1,0 +1,1216 @@
+config_schema_version: "1.0"
+methodology_version: "1.1"
+config_status: READY_FOR_IMPLEMENTATION
+normative_source:
+  file: SCORING_ENGINE_SPEC.md
+  sha256: 55e739eac2062f47451126b76a372aa1f4ad0cd59f26da443466995553e65c67
+
+engine_contract:
+  deterministic: true
+  score_calculator: rule_engine
+  llm_can_calculate_or_override_score: false
+  criterion_value_domain: [1, 2, 3, 4, 5, null]
+  unknown_value: null
+  unknown_to_minimum_score: false
+  primary_comparison_model: value_x_feasibility_matrix
+  combined_score_50:
+    allowed_as_auxiliary: true
+    allowed_as_primary_priority_model: false
+  required_snapshot_fields:
+    - scoring_model_version
+    - rule_version
+    - calculated_at
+    - input_snapshot_id
+    - process_card_version
+
+condition_dsl:
+  scalar_operators:
+    - eq
+    - ne
+    - lt
+    - lte
+    - gt
+    - gte
+    - in
+    - is_null
+    - is_not_null
+  collection_operators:
+    - count_eq
+    - count_gte
+    - count_lte
+    - count_between
+    - all_items
+    - any_item
+    - count_items_eq
+    - count_items_gte
+    - count_items_lte
+  logical_operators:
+    - all
+    - any
+  null_condition_result: unknown
+  unknown_condition_is_applicable: false
+
+fact_model:
+  statuses:
+    - Confirmed
+    - Derived
+    - Inferred
+    - Unknown
+  source_types:
+    - registry
+    - calculated
+    - interview
+    - document
+    - system_data
+    - llm_hypothesis
+  source_roles:
+    - process_owner
+    - executor
+    - IT
+    - information_security
+    - data_owner
+    - system_owner
+    - technical_expert
+    - analyst
+    - other
+  derived_fact_provenance_required:
+    - derivation_rule_id
+    - derivation_rule_version
+    - input_fact_ids
+  inferred_allowed_in_formal_scoring: false
+  llm_hypothesis_allowed_in_formal_scoring: false
+
+evidence_policy:
+  PRE_SCORE:
+    allowed:
+      - status: Confirmed
+        source_type: registry
+      - status: Derived
+        derived_only_from:
+          - status: Confirmed
+            source_type: registry
+    forbidden:
+      - unconfirmed_llm_extracted_fact
+      - llm_hypothesis
+      - unconfirmed_interview_fact
+      - unconfirmed_analyst_assumption
+  INTERVIEW_SCORE:
+    allowed:
+      - status: Confirmed
+        source_type: registry
+      - status: Confirmed
+        source_type: interview
+        human_confirmation_required: true
+      - status: Confirmed
+        source_type: document
+        human_confirmation_required: true
+      - status: Confirmed
+        source_type: system_data
+        human_confirmation_required: true
+      - status: Derived
+        derived_only_from_statuses: [Confirmed, Derived]
+    can_be_incomplete: true
+  VERIFIED_SCORE:
+    all_criteria_known: true
+    required_known_criteria_count: 10
+    allowed_evidence_statuses: [Confirmed, Derived]
+    derived_rules_must_be_deterministic_and_versioned: true
+    unresolved_scoring_conflicts_allowed: false
+    methodology_version_required: true
+    input_snapshot_id_required: true
+    criterion_specific_source_requirements_enforced: true
+    confirmed_blocker_allowed: true
+
+score_status_eligibility:
+  PRE_SCORE:
+    only_registry_confirmed_and_registry_derived: true
+  INTERVIEW_SCORE:
+    additional_confirmed_sources_used: true
+    verified_requirements_met: false
+    null_criteria_allowed: true
+  VERIFIED_SCORE:
+    all_criteria_in_range_1_5: true
+    null_criteria_allowed: false
+    all_evidence_confirmed_or_derived: true
+    unresolved_scoring_conflicts_allowed: false
+    critical_technical_evidence_confirmed_by_required_role: true
+
+conflict_policy:
+  detect_when_confirmed_sources_contradict: true
+  engine_may_choose_source: false
+  registry_fact_may_be_overwritten: false
+  affected_criterion_score: null
+  unaffected_criteria_continue: true
+  verified_score_allowed_with_unresolved_scoring_conflict: false
+
+rule_overlap_policy:
+  criteria: [F2, F3, F4, F5]
+  applicable_rule_evidence_statuses: [Confirmed, Derived]
+  selection: minimum_applicable_score
+  expression: "min(applicable_confirmed_rule_scores)"
+  unknown_constraint_score_effect: none
+  unknown_constraint_creates_risk: RISK_REQUIRES_VERIFICATION
+  insufficient_data_score: null
+  verified_requires_all_mandatory_inputs_known: true
+
+criterion_order:
+  VALUE: [V1, V2, V3, V4, V5]
+  FEASIBILITY: [F1, F2, F3, F4, F5]
+
+criteria:
+  V1:
+    criterion_id: V1
+    result_key: frequency
+    axis: VALUE
+    name: frequency
+    rule_id: V1_FREQUENCY_v1.1
+    required_inputs:
+      - annual_instances
+    inputs:
+      annual_instances:
+        type: integer
+        unit: instances_per_year
+        valid_min: 0
+        valid_min_inclusive: true
+    thresholds:
+      - score: 1
+        min: 1
+        min_inclusive: true
+        max: 11
+        max_inclusive: true
+      - score: 2
+        min: 12
+        min_inclusive: true
+        max: 51
+        max_inclusive: true
+      - score: 3
+        min: 52
+        min_inclusive: true
+        max: 249
+        max_inclusive: true
+      - score: 4
+        min: 250
+        min_inclusive: true
+        max: 999
+        max_inclusive: true
+      - score: 5
+        min: 1000
+        min_inclusive: true
+        max: null
+        max_inclusive: false
+    zero_behavior:
+      score: null
+      data_quality_issue: ZERO_OR_INACTIVE_PROCESS
+    invalid_examples:
+      - по необходимости
+      - маршруты
+      - площадь
+      - "#VALUE!"
+      - "1/24"
+    missing_behavior:
+      score: null
+      status: Unknown
+      missing_facts: [annual_instances]
+    evidence_requirements:
+      inherit_stage_policy: true
+
+  V2:
+    criterion_id: V2
+    result_key: labor
+    axis: VALUE
+    name: labor
+    rule_id: V2_LABOR_v1.1
+    required_inputs:
+      - annual_instances
+      - hours_per_instance
+    inputs:
+      annual_instances:
+        type: number
+        unit: instances_per_year
+        valid_min: 0
+        valid_min_inclusive: true
+      hours_per_instance:
+        type: number
+        unit: person_hours_per_instance
+        valid_min: 0
+        valid_min_inclusive: true
+      annual_labor_hours:
+        type: number
+        unit: person_hours_per_year
+        derived: true
+    derived_input: annual_labor_hours
+    thresholds:
+      - score: 1
+        min: 0
+        min_inclusive: true
+        max: 100
+        max_inclusive: false
+      - score: 2
+        min: 100
+        min_inclusive: true
+        max: 500
+        max_inclusive: false
+      - score: 3
+        min: 500
+        min_inclusive: true
+        max: 2000
+        max_inclusive: false
+      - score: 4
+        min: 2000
+        min_inclusive: true
+        max: 10000
+        max_inclusive: false
+      - score: 5
+        min: 10000
+        min_inclusive: true
+        max: null
+        max_inclusive: false
+    missing_behavior:
+      if_any_required_input_missing: true
+      score: null
+      status: Unknown
+      missing_facts_from_required_inputs: true
+    ambiguous_examples:
+      - "1/1.5"
+      - "1/24"
+      - "#VALUE!"
+      - text
+    semantic_verification:
+      input_flag: hours_per_instance_semantic_verification_required
+      pre_score_allowed_when_flagged: true
+      verified_requires_confirmation_of_active_person_hours: true
+      numeric_threshold_defined_by_methodology: false
+      specification_example_hours_per_instance: 256
+    evidence_requirements:
+      inherit_stage_policy: true
+
+  V3:
+    criterion_id: V3
+    result_key: manual_work
+    axis: VALUE
+    name: manual_work_share
+    rule_id: V3_MANUAL_WORK_v1.1
+    required_inputs:
+      VERIFIED_SCORE:
+        - manual_work_share_percent
+      PRE_SCORE_PROXY:
+        any_minimum_known: 2
+        from:
+          - paper_status
+          - digitalization_level
+          - machine_readability
+    inputs:
+      manual_work_share_percent:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_min_inclusive: true
+        valid_max: 100
+        valid_max_inclusive: true
+      paper_status:
+        type: enum
+        unit: null
+      digitalization_level:
+        type: enum
+        unit: null
+      machine_readability:
+        type: enum
+        unit: null
+    thresholds:
+      - score: 1
+        min: 0
+        min_inclusive: true
+        max: 10
+        max_inclusive: true
+      - score: 2
+        min: 10
+        min_inclusive: false
+        max: 30
+        max_inclusive: true
+      - score: 3
+        min: 30
+        min_inclusive: false
+        max: 60
+        max_inclusive: true
+      - score: 4
+        min: 60
+        min_inclusive: false
+        max: 85
+        max_inclusive: true
+      - score: 5
+        min: 85
+        min_inclusive: false
+        max: 100
+        max_inclusive: true
+    proxy:
+      allowed_score_statuses: [PRE_SCORE, INTERVIEW_SCORE]
+      fact_status: Derived
+      minimum_known_features: 2
+      enum_mappings:
+        paper_status:
+          paperless: 1
+          mixed: 3
+          paper: 5
+        digitalization_level:
+          digital: 1
+          partially_digital: 3
+          non_digital: 5
+        machine_readability:
+          machine_readable: 1
+          partially_machine_readable: 3
+          non_machine_readable: 5
+      aggregation: arithmetic_mean
+      rounding_bands:
+        - score: 1
+          min: 1.0
+          min_inclusive: true
+          max: 1.49
+          max_inclusive: true
+        - score: 2
+          min: 1.5
+          min_inclusive: true
+          max: 2.49
+          max_inclusive: true
+        - score: 3
+          min: 2.5
+          min_inclusive: true
+          max: 3.49
+          max_inclusive: true
+        - score: 4
+          min: 3.5
+          min_inclusive: true
+          max: 4.49
+          max_inclusive: true
+        - score: 5
+          min: 4.5
+          min_inclusive: true
+          max: 5.0
+          max_inclusive: true
+      if_fewer_than_minimum_features_known:
+        score: null
+        status: Unknown
+    actual_replaces_proxy:
+      actual_field: manual_work_share_percent
+      required_actual_status: Confirmed
+      replace_current_score: true
+      retain_proxy_in_pre_score_history: true
+      proxy_participates_after_replacement: false
+      proxy_actual_difference_creates_conflict: false
+      conflict_only_between_confirmed_actual_sources: true
+    missing_behavior:
+      no_actual_and_proxy_unavailable_score: null
+      status: Unknown
+    evidence_requirements:
+      inherit_stage_policy: true
+      verified_requires_confirmed_actual: true
+
+  V4:
+    criterion_id: V4
+    result_key: repeatability
+    axis: VALUE
+    name: repeatability
+    rule_id: V4_REPEATABILITY_v1.1
+    required_inputs:
+      primary:
+        - standard_scenario_share_percent
+      qualitative_fallback:
+        - repeatability_level
+    inputs:
+      standard_scenario_share_percent:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_min_inclusive: true
+        valid_max: 100
+        valid_max_inclusive: true
+      repeatability_level:
+        type: enum
+        unit: null
+    thresholds:
+      - score: 1
+        min: 0
+        min_inclusive: true
+        max: 20
+        max_inclusive: false
+      - score: 2
+        min: 20
+        min_inclusive: true
+        max: 40
+        max_inclusive: false
+      - score: 3
+        min: 40
+        min_inclusive: true
+        max: 70
+        max_inclusive: false
+      - score: 4
+        min: 70
+        min_inclusive: true
+        max: 90
+        max_inclusive: false
+      - score: 5
+        min: 90
+        min_inclusive: true
+        max: 100
+        max_inclusive: true
+    enum_mappings:
+      unique: 1
+      mostly_unique: 2
+      mixed: 3
+      mostly_standard: 4
+      standard: 5
+    input_priority:
+      - confirmed_quantitative
+      - confirmed_qualitative_enum
+    qualitative_requires_confirmed: true
+    contradiction_between_confirmed_inputs:
+      score: null
+      conflict: true
+    missing_behavior:
+      if_no_quantitative_or_confirmed_enum:
+        score: null
+        status: Unknown
+    evidence_requirements:
+      inherit_stage_policy: true
+
+  V5:
+    criterion_id: V5
+    result_key: problematicity
+    axis: VALUE
+    name: problematicity
+    rule_id: V5_PROBLEMATICITY_v1.1
+    required_inputs:
+      primary:
+        - problem_case_share_percent
+      alternative_rates:
+        any_minimum_known: 1
+        from:
+          - return_rate
+          - error_rate
+          - delay_rate
+          - rework_rate
+          - complaint_rate
+      qualitative_fallback:
+        - problematicity_level
+    inputs:
+      problem_case_share_percent:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_min_inclusive: true
+        valid_max: 100
+        valid_max_inclusive: true
+      return_rate:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_max: 100
+      error_rate:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_max: 100
+      delay_rate:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_max: 100
+      rework_rate:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_max: 100
+      complaint_rate:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_max: 100
+      problematicity_level:
+        type: enum
+        unit: null
+    thresholds:
+      - score: 1
+        min: 0
+        min_inclusive: true
+        max: 1
+        max_inclusive: true
+      - score: 2
+        min: 1
+        min_inclusive: false
+        max: 5
+        max_inclusive: true
+      - score: 3
+        min: 5
+        min_inclusive: false
+        max: 15
+        max_inclusive: true
+      - score: 4
+        min: 15
+        min_inclusive: false
+        max: 30
+        max_inclusive: true
+      - score: 5
+        min: 30
+        min_inclusive: false
+        max: 100
+        max_inclusive: true
+    alternative_rate_proxy:
+      fact_name: problem_proxy
+      operation: max
+      minimum_known_inputs: 1
+      inputs:
+        - return_rate
+        - error_rate
+        - delay_rate
+        - rework_rate
+        - complaint_rate
+      fact_status: Derived
+    enum_mappings:
+      practically_none: 1
+      rare: 2
+      periodic: 3
+      frequent: 4
+      systemic: 5
+    input_priority:
+      - confirmed_problem_case_share_percent
+      - derived_problem_proxy
+      - confirmed_qualitative_enum
+    qualitative_requires_confirmed: true
+    missing_behavior:
+      if_no_quantitative_proxy_or_confirmed_enum:
+        score: null
+        status: Unknown
+    evidence_requirements:
+      inherit_stage_policy: true
+
+  F1:
+    criterion_id: F1
+    result_key: data_availability
+    axis: FEASIBILITY
+    name: data_availability
+    rule_id: F1_DATA_AVAILABILITY_v1.1
+    required_inputs:
+      - data_coverage_percent
+      - data_access_level
+      - data_readiness_level
+    inputs:
+      data_coverage_percent:
+        type: number
+        unit: percent
+        valid_min: 0
+        valid_min_inclusive: true
+        valid_max: 100
+        valid_max_inclusive: true
+      data_access_level:
+        type: enum
+        unit: null
+      data_readiness_level:
+        type: enum
+        unit: null
+    components:
+      coverage:
+        input: data_coverage_percent
+        thresholds:
+          - score: 1
+            min: 0
+            min_inclusive: true
+            max: 20
+            max_inclusive: false
+          - score: 2
+            min: 20
+            min_inclusive: true
+            max: 40
+            max_inclusive: false
+          - score: 3
+            min: 40
+            min_inclusive: true
+            max: 70
+            max_inclusive: false
+          - score: 4
+            min: 70
+            min_inclusive: true
+            max: 90
+            max_inclusive: false
+          - score: 5
+            min: 90
+            min_inclusive: true
+            max: 100
+            max_inclusive: true
+      access:
+        input: data_access_level
+        enum_mappings:
+          confirmed_no_access: 1
+          strongly_restricted: 2
+          partial_or_after_approval: 3
+          mostly_available: 4
+          confirmed_ready: 5
+          unknown: null
+      readiness:
+        input: data_readiness_level
+        enum_mappings:
+          unusable: 1
+          major_preparation: 2
+          partial_structure: 3
+          mostly_ready: 4
+          structured_machine_readable_ready: 5
+    aggregation:
+      operation: min
+      expression: "min(coverage_score, access_score, readiness_score)"
+      weak_link_principle: true
+    missing_behavior:
+      if_any_component_null: true
+      score: null
+      unknown_access_score: null
+      unknown_access_creates_minimum_score: false
+    evidence_requirements:
+      inherit_stage_policy: true
+      verified_requires_all_components_known: true
+
+  F2:
+    criterion_id: F2
+    result_key: integration_simplicity
+    axis: FEASIBILITY
+    name: integration_simplicity
+    rule_id: F2_INTEGRATION_SIMPLICITY_v1.1
+    required_inputs:
+      - integrations
+      - complex_approvals_required
+    inputs:
+      integrations:
+        type: array
+        unit: integration
+        item_schema:
+          system_name: {type: string, required: true}
+          critical: {type: boolean, required: true}
+          mechanism: {type: string, required: true, nullable: true}
+          api_documented: {type: boolean, required: true, nullable: true}
+          access_confirmed: {type: boolean, required: true, nullable: true}
+          custom_development_required: {type: boolean, required: true, nullable: true}
+          approval_required: {type: boolean, required: true, nullable: true}
+          available: {type: boolean, required: true, nullable: true}
+          closed_system: {type: boolean, required: true, nullable: true}
+          minor_adaptation_required: {type: boolean, required: true, nullable: true}
+          mechanism_technically_understood: {type: boolean, required: true, nullable: true}
+          realistic_workaround_available: {type: boolean, required: true, nullable: true}
+          permitted_integration_method_available: {type: boolean, required: true, nullable: true}
+      complex_approvals_required:
+        type: boolean
+        unit: null
+    rules:
+      - score: 5
+        any:
+          - all:
+              - {path: integrations, op: count_eq, value: 0}
+          - all:
+              - {path: integrations, op: count_between, min: 1, max: 2}
+              - {path: integrations.api_documented, op: all_items, value: true}
+              - {path: integrations.access_confirmed, op: all_items, value: true}
+              - {path: integrations.custom_development_required, op: all_items, value: false}
+      - score: 4
+        all:
+          - {path: integrations, op: count_between, min: 1, max: 2}
+          - {path: integrations.access_confirmed, op: all_items, value: true}
+          - {path: integrations.mechanism_technically_understood, op: all_items, value: true}
+          - {path: integrations.minor_adaptation_required, op: any_item, value: true}
+      - score: 3
+        any:
+          - all:
+              - {path: integrations.available, op: count_items_gte, value: 3}
+          - all:
+              - {path: integrations.custom_development_required, op: count_items_eq, value: 1}
+              - {path: integrations.mechanism_technically_understood, op: all_items, value: true, filter: {custom_development_required: true}}
+      - score: 2
+        all:
+          - {path: integrations.closed_system, op: count_items_gte, value: 2}
+          - {path: complex_approvals_required, op: eq, value: true}
+          - {path: integrations.api_documented, op: all_items, value: false}
+          - {path: integrations.realistic_workaround_available, op: any_item, value: true}
+      - score: 1
+        all:
+          - {path: integrations.critical, op: any_item, value: true, filter: {permitted_integration_method_available: false}}
+    overlap_policy_ref: rule_overlap_policy
+    blocker_on_confirmed_score_1_condition: CRITICAL_INTEGRATION_UNAVAILABLE
+    unconfirmed_score_1_condition_risk: RISK_REQUIRES_VERIFICATION
+    missing_behavior:
+      if_no_rule_is_decidable: true
+      score: null
+      unknown_constraint_does_not_reduce_score: true
+      create_risk: RISK_REQUIRES_VERIFICATION
+    evidence_requirements:
+      inherit_stage_policy: true
+      verified_requires_all_applicable_item_fields_known: true
+
+  F3:
+    criterion_id: F3
+    result_key: technical_feasibility
+    axis: FEASIBILITY
+    name: technical_feasibility
+    rule_id: F3_TECHNICAL_FEASIBILITY_v1.1
+    required_inputs:
+      - required_technologies
+      - critical_competencies
+      - ml_cv_ds_required
+      - rd_required
+      - technical_dependencies
+      - technical_risks
+      - solution_feasible
+      - poc_required
+    inputs:
+      required_technologies:
+        type: array
+        unit: technology
+        item_schema:
+          name: {type: string, required: true}
+          standard_stack: {type: boolean, required: true, nullable: true}
+          understood_by_team: {type: boolean, required: true, nullable: true}
+          new_learning_required: {type: boolean, required: true, nullable: true}
+      critical_competencies:
+        type: array
+        unit: competency
+        item_schema:
+          name: {type: string, required: true}
+          available_in_team: {type: boolean, required: true, nullable: true}
+          realistic_closure_available: {type: boolean, required: true, nullable: true}
+      ml_cv_ds_required:
+        type: boolean
+        unit: null
+      rd_required:
+        type: boolean
+        unit: null
+      poc_required:
+        type: boolean
+        unit: null
+      solution_feasible:
+        type: boolean
+        unit: null
+      technical_dependencies:
+        type: array
+        unit: dependency
+        item_schema:
+          name: {type: string, required: true}
+          controlled: {type: boolean, required: true, nullable: true}
+          uncertain_research_outcome: {type: boolean, required: true, nullable: true}
+      technical_risks:
+        type: array
+        unit: risk
+        item_schema:
+          description: {type: string, required: true}
+          severity:
+            type: enum
+            required: true
+            allowed: [moderate, significant]
+    rules:
+      - score: 5
+        all:
+          - {path: critical_competencies.available_in_team, op: all_items, value: true}
+          - {path: required_technologies.standard_stack, op: all_items, value: true}
+          - {path: rd_required, op: eq, value: false}
+          - {path: poc_required, op: eq, value: false}
+          - {path: required_technologies.understood_by_team, op: all_items, value: true}
+      - score: 4
+        all:
+          - {path: critical_competencies.available_in_team, op: all_items, value: true}
+          - {path: technical_risks, op: count_items_lte, value: 1, filter: {severity: moderate}}
+      - score: 3
+        all:
+          - {path: solution_feasible, op: eq, value: true}
+          - any:
+              - {path: required_technologies.new_learning_required, op: any_item, value: true}
+              - {path: poc_required, op: eq, value: true}
+          - {path: technical_risks, op: count_items_gte, value: 2, filter: {severity: moderate}}
+          - {path: critical_competencies.realistic_closure_available, op: all_items, value: true, filter: {available_in_team: false}}
+      - score: 2
+        any:
+          - {path: technical_risks.severity, op: any_item, value: significant}
+          - all:
+              - {path: critical_competencies.available_in_team, op: any_item, value: false}
+              - {path: critical_competencies.realistic_closure_available, op: all_items, value: true, filter: {available_in_team: false}}
+      - score: 1
+        any:
+          - all:
+              - {path: critical_competencies.available_in_team, op: any_item, value: false}
+              - {path: critical_competencies.realistic_closure_available, op: any_item, value: false, filter: {available_in_team: false}}
+          - {path: technical_dependencies.uncertain_research_outcome, op: any_item, value: true}
+    overlap_policy_ref: rule_overlap_policy
+    missing_behavior:
+      if_no_rule_is_decidable: true
+      score: null
+      unknown_constraint_does_not_reduce_score: true
+      create_risk: RISK_REQUIRES_VERIFICATION
+    evidence_requirements:
+      inherit_stage_policy: true
+      verified_source_roles_any_of: [IT, system_owner, technical_expert]
+      process_owner_alone_is_sufficient_for_verified: false
+      verified_requires_all_mandatory_inputs_known: true
+
+  F4:
+    criterion_id: F4
+    result_key: mvp_3_months
+    axis: FEASIBILITY
+    name: mvp_3_months
+    rule_id: F4_MVP_3_MONTHS_v1.1
+    required_inputs:
+      - mvp_scope_defined
+      - end_to_end_scenario_defined
+      - secondary_functions_excludable
+      - critical_external_dependencies
+      - technical_time_estimate
+      - user_value_demonstrable
+      - measurable_result_demonstrable
+      - scope_limitation_required
+      - deliverable_type
+      - limited_prototype_feasible_within_3_months
+      - standalone_useful_scope_possible
+    inputs:
+      mvp_scope_defined: {type: boolean, unit: null}
+      end_to_end_scenario_defined: {type: boolean, unit: null}
+      secondary_functions_excludable: {type: boolean, unit: null}
+      critical_external_dependencies:
+        type: array
+        unit: dependency
+      technical_time_estimate:
+        type: number
+        unit: months
+      user_value_demonstrable: {type: boolean, unit: null}
+      measurable_result_demonstrable: {type: boolean, unit: null}
+      scope_limitation_required: {type: boolean, unit: null}
+      deliverable_type:
+        type: enum
+        unit: null
+        allowed:
+          - end_to_end_mvp
+          - strongly_limited_useful_mvp
+          - poc
+          - technical_prototype
+          - demo_fragment
+          - none
+      limited_prototype_feasible_within_3_months: {type: boolean, unit: null}
+      standalone_useful_scope_possible: {type: boolean, unit: null}
+    numeric_thresholds:
+      target_months: 3
+    rules:
+      - score: 5
+        all:
+          - {path: technical_time_estimate, op: lte, value: 3}
+          - {path: mvp_scope_defined, op: eq, value: true}
+          - {path: end_to_end_scenario_defined, op: eq, value: true}
+          - {path: user_value_demonstrable, op: eq, value: true}
+          - {path: measurable_result_demonstrable, op: eq, value: true}
+          - {path: scope_limitation_required, op: eq, value: false}
+      - score: 4
+        all:
+          - {path: technical_time_estimate, op: lte, value: 3}
+          - {path: end_to_end_scenario_defined, op: eq, value: true}
+          - {path: user_value_demonstrable, op: eq, value: true}
+          - {path: scope_limitation_required, op: eq, value: true}
+          - {path: secondary_functions_excludable, op: eq, value: true}
+      - score: 3
+        all:
+          - {path: technical_time_estimate, op: lte, value: 3}
+          - {path: deliverable_type, op: eq, value: strongly_limited_useful_mvp}
+          - {path: user_value_demonstrable, op: eq, value: true}
+      - score: 2
+        all:
+          - {path: technical_time_estimate, op: lte, value: 3}
+          - {path: deliverable_type, op: in, value: [poc, technical_prototype, demo_fragment]}
+          - {path: end_to_end_scenario_defined, op: eq, value: false}
+      - score: 1
+        any:
+          - {path: limited_prototype_feasible_within_3_months, op: eq, value: false}
+          - {path: standalone_useful_scope_possible, op: eq, value: false}
+    overlap_policy_ref: rule_overlap_policy
+    blocker_on_confirmed_score_1_condition: NO_VIABLE_MVP_SCOPE
+    missing_behavior:
+      if_no_rule_is_decidable: true
+      score: null
+      unknown_constraint_does_not_reduce_score: true
+      create_risk: RISK_REQUIRES_VERIFICATION
+    evidence_requirements:
+      inherit_stage_policy: true
+      verified_requires_all_mandatory_inputs_known: true
+
+  F5:
+    criterion_id: F5
+    result_key: measurability
+    axis: FEASIBILITY
+    name: measurability
+    rule_id: F5_MEASURABILITY_v1.1
+    required_inputs:
+      - primary_kpi_defined
+      - kpi_count
+      - baseline_available
+      - baseline_collectable
+      - before_after_comparable
+      - measurement_method_defined
+      - baseline_partial
+      - measurement_mode
+      - indirect_indicators_used
+    inputs:
+      primary_kpi_defined: {type: boolean, unit: null}
+      kpi_count:
+        type: integer
+        unit: kpi
+        valid_min: 0
+      baseline_available: {type: boolean, unit: null}
+      baseline_collectable: {type: boolean, unit: null}
+      before_after_comparable: {type: boolean, unit: null}
+      measurement_method_defined: {type: boolean, unit: null}
+      baseline_partial: {type: boolean, unit: null}
+      measurement_mode:
+        type: enum
+        unit: null
+        allowed: [quantitative, qualitative, indirect]
+      indirect_indicators_used: {type: boolean, unit: null}
+    rules:
+      - score: 5
+        all:
+          - {path: primary_kpi_defined, op: eq, value: true}
+          - {path: baseline_available, op: eq, value: true}
+          - {path: measurement_method_defined, op: eq, value: true}
+          - {path: before_after_comparable, op: eq, value: true}
+      - score: 4
+        all:
+          - {path: kpi_count, op: gte, value: 2}
+          - {path: measurement_mode, op: eq, value: quantitative}
+          - {path: baseline_collectable, op: eq, value: true}
+          - {path: before_after_comparable, op: eq, value: true}
+      - score: 3
+        all:
+          - {path: kpi_count, op: gte, value: 1}
+          - {path: measurement_mode, op: eq, value: quantitative}
+          - any:
+              - {path: baseline_partial, op: eq, value: true}
+              - all:
+                  - {path: baseline_available, op: eq, value: false}
+                  - {path: baseline_collectable, op: eq, value: true}
+      - score: 2
+        all:
+          - {path: measurement_mode, op: in, value: [qualitative, indirect]}
+          - {path: indirect_indicators_used, op: eq, value: true}
+          - {path: baseline_available, op: eq, value: false}
+      - score: 1
+        all:
+          - {path: primary_kpi_defined, op: eq, value: false}
+          - {path: before_after_comparable, op: eq, value: false}
+    overlap_policy_ref: rule_overlap_policy
+    blocker_on_confirmed_score_1_condition: EFFECT_NOT_MEASURABLE
+    missing_behavior:
+      if_no_rule_is_decidable: true
+      score: null
+      unknown_constraint_does_not_reduce_score: true
+      create_risk: RISK_REQUIRES_VERIFICATION
+    evidence_requirements:
+      inherit_stage_policy: true
+      verified_requires_all_mandatory_inputs_known: true
+
+derived_fact_rules:
+  annual_labor_hours:
+    derivation_rule_id: DERIVE_ANNUAL_LABOR_HOURS_v1.1
+    derivation_rule_version: "1.1"
+    operation: multiply
+    expression: "annual_instances * hours_per_instance"
+    inputs:
+      - field: annual_instances
+        unit: instances_per_year
+      - field: hours_per_instance
+        unit: person_hours_per_instance
+    output:
+      field: annual_labor_hours
+      unit: person_hours_per_year
+      fact_status: Derived
+    if_any_input_null:
+      output_value: null
+    provenance_required: true
+  manual_work_proxy:
+    derivation_rule_id: DERIVE_MANUAL_WORK_PROXY_v1.1
+    derivation_rule_version: "1.1"
+    source_config_path: criteria.V3.proxy
+    operation: arithmetic_mean_then_round_by_configured_bands
+    minimum_known_inputs: 2
+    output:
+      field: manual_work_proxy
+      unit: score_1_5
+      fact_status: Derived
+    provenance_required: true
+  problem_proxy:
+    derivation_rule_id: DERIVE_PROBLEM_PROXY_v1.1
+    derivation_rule_version: "1.1"
+    operation: max
+    inputs:
+      - return_rate
+      - error_rate
+      - delay_rate
+      - rework_rate
+      - complaint_rate
+    minimum_known_inputs: 1
+    output:
+      field: problem_proxy
+      unit: percent
+      fact_status: Derived
+    if_no_input_known:
+      output_value: null
+    provenance_required: true
+
+axis_aggregation:
+  axes:
+    VALUE:
+      criteria: [V1, V2, V3, V4, V5]
+      criterion_count: 5
+    FEASIBILITY:
+      criteria: [F1, F2, F3, F4, F5]
+      criterion_count: 5
+  full_score:
+    condition: all_five_criteria_non_null
+    operation: sum
+    min: 5
+    max: 25
+    if_any_criterion_null: null
+  known_sum:
+    operation: sum_non_null_criteria
+    empty_sum: 0
+  unknown_count:
+    expression: "5 - known_criteria_count"
+  coverage:
+    expression: "known_criteria_count / 5"
+    min: 0.0
+    max: 1.0
+  range:
+    min_expression: "known_sum + unknown_count * 1"
+    max_expression: "known_sum + unknown_count * 5"
+    unknown_criterion_min: 1
+    unknown_criterion_max: 5
+    if_full_score_known: [full_score, full_score]
+
+interpretation_levels:
+  requires_full_axis_score: true
+  thresholds:
+    - level: low
+      min: 5
+      min_inclusive: true
+      max: 9
+      max_inclusive: true
+    - level: below_average
+      min: 10
+      min_inclusive: true
+      max: 14
+      max_inclusive: true
+    - level: medium
+      min: 15
+      min_inclusive: true
+      max: 18
+      max_inclusive: true
+    - level: high
+      min: 19
+      min_inclusive: true
+      max: 22
+      max_inclusive: true
+    - level: very_high
+      min: 23
+      min_inclusive: true
+      max: 25
+      max_inclusive: true
+  high_score_threshold: 19
+
+blocker_policy:
+  score_effect: none
+  stored_separately_from_axes: true
+  may_coexist_with_verified_score: true
+  unconfirmed_blocker_becomes: RISK_REQUIRES_VERIFICATION
+  rules:
+    NO_PROCESS_OWNER_OR_EXPERT:
+      trigger:
+        all:
+          - {path: process_owner_or_expert_available, op: eq, value: false}
+      evidence_status_required: Confirmed
+    CRITICAL_DATA_UNAVAILABLE:
+      trigger:
+        all:
+          - {path: critical_data_required, op: eq, value: true}
+          - {path: data_access_level, op: eq, value: confirmed_no_access}
+      evidence_status_required: Confirmed
+    LEGAL_INFOSEC_PDN_BLOCK:
+      trigger:
+        all:
+          - {path: legal_infosec_pdn_block, op: eq, value: true}
+      evidence_status_required: Confirmed
+    CRITICAL_INTEGRATION_UNAVAILABLE:
+      trigger:
+        all:
+          - {path: critical_integration_unavailable, op: eq, value: true}
+      evidence_status_required: Confirmed
+      linked_criterion: F2
+    NO_VIABLE_MVP_SCOPE:
+      trigger:
+        all:
+          - {path: no_viable_mvp_scope, op: eq, value: true}
+      evidence_status_required: Confirmed
+      linked_criterion: F4
+    EFFECT_NOT_MEASURABLE:
+      trigger:
+        all:
+          - {path: effect_not_measurable, op: eq, value: true}
+      evidence_status_required: Confirmed
+      linked_criterion: F5
+
+risk_policy:
+  types:
+    - RISK
+    - RISK_REQUIRES_VERIFICATION
+  score_effect: none_automatically
+  blocks_continued_analysis: false
+  create_RISK_REQUIRES_VERIFICATION_when:
+    - potential_blocker_is_not_confirmed
+    - constraint_for_F2_F3_F4_or_F5_is_unknown
+    - limitation_can_change_score_and_requires_confirmation
+  unknown_constraint_behavior:
+    lower_score_automatically: false
+    score_if_rule_cannot_be_decided: null
+
+criterion_result_requirements:
+  required_fields:
+    - criterion_id
+    - result_key
+    - rule_id
+    - score
+    - status
+    - evidence
+    - applied_rule
+    - methodology_version
+    - missing_facts
+    - conflict
+    - risks
+    - blockers
+
+completeness_validation:
+  on_failure:
+    scoring_disabled: true
+    reason: INCOMPLETE_SCORING_SPEC
+  requirements:
+    methodology_version_present: true
+    config_load_successful: true
+    exact_criterion_count: 10
+    expected_criterion_ids: [V1, V2, V3, V4, V5, F1, F2, F3, F4, F5]
+    each_criterion_has_unique_rule_id: true
+    each_criterion_defines_scores_1_through_5: true
+    each_criterion_defines_input_fields: true
+    quantitative_inputs_define_units: true
+    missing_behavior_defined_for_each_criterion: true
+    conflict_behavior_defined: true
+    evidence_requirements_defined: true
+    all_numeric_thresholds_in_config: true
+    all_enum_mappings_in_config: true
+    f2_f5_overlap_policy_defined: true
+    f1_unknown_is_null: true
+    v3_actual_replaces_proxy: true
+    derived_rules_require_provenance: true
+    interpretation_covers_full_range_5_25_without_gaps: true
+    axis_aggregation_defined: true
+    blocker_rules_defined: true
+    risk_requires_verification_defined: true
+    llm_direct_score_calculation_disabled: true
+  runtime_invariants:
+    - same_input_snapshot_and_methodology_version_produce_same_result
+    - unknown_never_becomes_1_or_other_default_score
+    - verified_score_impossible_with_null_criterion
+    - verified_score_impossible_with_unresolved_scoring_conflict
+    - blocker_does_not_zero_value_or_feasibility
+    - historical_scores_keep_original_methodology_version
