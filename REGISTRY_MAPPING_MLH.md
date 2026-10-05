@@ -231,16 +231,17 @@ Excel error
 6. Cached Excel error даёт `normalized_value = null` и `FORMULA_CACHE_ERROR`.
 7. Cached result неподходящего или неоднозначного типа даёт `normalized_value = null` и `FORMULA_CACHE_UNINTERPRETABLE`.
 8. Ссылка формулы за пределы фактического диапазона выбранной таблицы не вычисляется. Создаётся `FORMULA_REFERENCE_OUTSIDE_TABLE`.
-9. Формула в K или L, агрегирующая значения других строк, является признаком `AGGREGATE` независимо от наличия cached result.
+9. Формула в K или L, агрегирующая значения других строк, является признаком generic classification `AGGREGATE` независимо от наличия cached result; явный `rowType` профильного mapping имеет приоритет (§10.7).
 10. Валидность cached result не доказывается повторным вычислением. В provenance указывается `value_origin = formula_cached_value`.
+11. Shared formulas являются реальными формулами. Для `<f t="shared" si="..."/>` parser находит master той же группы `si` на том же листе, проверяет declared `ref` и раскрывает ссылки с относительным смещением, сохраняя абсолютные и смешанные ссылки. Исходный текст и атрибуты формулы, координата master, диапазон группы и раскрытая формула сохраняются отдельно от cached result. Раскрытие ссылок не является пересчётом Excel. Отсутствующий/неоднозначный master или выход за declared `ref` не компенсируются предположением.
 
-На `Лист3` находятся пять formula cells: `K13`, `K15`, `L15`, `K16`, `L16`. Все имеют сохранённые числовые cached results и ссылки за пределы строки 17. Они сохраняются для аудита, но строки `13`, `15`, `16` не участвуют в scoring.
+На `Лист3` находятся восемь formula cells: `K13`, `L13`, `K14`, `L14`, `K15`, `L15`, `K16`, `L16`. `K13` — master shared-группы `si=0`, `ref=K13:L14`; `L13`, `K14`, `L14` — dependent cells. Все имеют сохранённые числовые cached results и после раскрытия ссылок ссылаются за пределы строки 17. Формулы сохраняются для аудита. Строки `13`, `15`, `16` не участвуют в scoring; строка `14` является `PROCESS` по явному решению профиля (§10.7).
 
 ---
 
 # 10. Классификация строк
 
-Классификация выполняется строго в следующем порядке. Все проверки используют колонки профиля после чтения raw/formula/cached, но до scoring.
+Generic classification выполняется в порядке §10.1–10.6 и определяет предварительный тип по raw/formula/cached данным колонок профиля. Затем применяется explicit profile classification (§10.7): если профиль явно задаёт `rowType`, он имеет приоритет над generic classification, включая признаки агрегирующих формул. Для строк без явного типа сохраняется generic classification. Для аудита сохраняются предварительный тип, его evidence и основание профильного override. `AnalysisUnit` создаётся только для итогового `PROCESS`.
 
 ## 10.1. EMPTY
 
@@ -268,7 +269,7 @@ grand total
 2. формула K или L агрегирует диапазон других строк;
 3. строка одновременно имеет имя в D и агрегирующую формулу из условий 1–2.
 
-Cached result не меняет тип строки.
+Cached result не меняет предварительный тип строки. Явный `rowType` профильного mapping имеет приоритет над этой эвристикой.
 
 ## 10.4. GROUP_HEADER
 
@@ -295,10 +296,13 @@ Cached result не меняет тип строки.
 
 ## 10.7. Фактическая классификация `Лист3`
 
+Следующая таблица задаёт explicit rowType для `registry_mlh v1.0.0` на листе `Лист3` утверждённого источника с SHA-256 `7f5dbcf3a62ca03b7ff37e9f4cef432db8e927f7c4a3744d9611c9fa857a3f02`. Область действия привязана к checksum и листу, чтобы позиции строк этого источника не переопределяли строки других загрузок. Это profile-specific mapping, а не глобальный список строк в parser и не ограничение количества процессов. Для других источников и строк без явного profile mapping действуют generic rules; номера строк не являются постоянными идентификаторами процессов.
+
 | Строки | Row type | Основание |
 |---|---|---|
-| 9, 10, 11, 12, 14, 17 | `PROCESS` | непустое название, нет агрегирующей формулы |
-| 13 | `AGGREGATE` | `K13` суммирует K других строк |
+| 9, 10, 11, 12, 17 | `PROCESS` | явное решение профиля; непустое название |
+| 14 | `PROCESS` | явное решение профиля имеет приоритет над агрегирующими shared formulas `K14`/`L14` |
+| 13 | `AGGREGATE` | явное решение профиля; `K13` и раскрытая shared formula `L13` суммируют другие строки |
 | 15 | `AGGREGATE` | `K15` и `L15` суммируют значения других строк |
 | 16 | `AGGREGATE` | `K16` и `L16` суммируют значения других строк |
 | — | `GROUP_HEADER`, `TOTAL`, `EMPTY`, `UNKNOWN` | среди строк 9–17 отсутствуют |
@@ -520,7 +524,7 @@ LLM output не является Derived fact.
 | `FORMULA_CACHE_ERROR` | ERROR | cached result — Excel error | normalized null |
 | `FORMULA_CACHE_UNINTERPRETABLE` | ERROR | cached result не соответствует expected type | normalized null |
 | `FORMULA_REFERENCE_OUTSIDE_TABLE` | WARNING | formula ссылается вне data range | не пересчитывать; сохранить evidence |
-| `AGGREGATE_METRIC_FORMULA` | INFO | K/L агрегирует другие строки | row type AGGREGATE |
+| `AGGREGATE_METRIC_FORMULA` | INFO | K/L агрегирует другие строки и итоговый row type — AGGREGATE | row type AGGREGATE; explicit PROCESS не исключается из scoring |
 | `CONDITIONAL_VALUE_MISSING` | WARNING | M=`cross_functional`, N пусто | уточнение данных |
 | `UNEXPECTED_CROSS_PROCESS_DETAIL` | INFO | M=`non_cross_functional`, но N/O заполнено | проверка согласованности |
 | `OFFICIAL_PROCESS_CODE_NOT_UNIQUE` | INFO | B повторяется | не использовать B как ID |
@@ -547,7 +551,7 @@ MLH-V-008  Стили и пустые styled cells за S не считаютс�
 MLH-V-009  REQUIRED value может быть null только с DQ issue; null не заменяется значением.
 MLH-V-010  K/L принимаются только при однозначной numeric normalization.
 MLH-V-011  Formula никогда не пересчитывается; invalid/missing cache даёт null.
-MLH-V-012  Aggregating formula в K/L классифицирует строку как AGGREGATE.
+MLH-V-012  Aggregating formula в K/L даёт generic AGGREGATE; explicit profile rowType имеет приоритет.
 MLH-V-013  UNKNOWN, GROUP_HEADER, AGGREGATE, TOTAL и EMPTY не участвуют в scoring.
 MLH-V-014  Повтор B не считается уникальной идентичностью и не объединяет строки.
 MLH-V-015  source_row_id, process_id и source_fingerprint создаются разными правилами.
@@ -575,9 +579,9 @@ MLH-V-020  На каждую PROCESS row создаётся одна PRIMARY Ana
 | MLH-MAP-07 | Прочитать строки | создано 9 `SourceRow`, номера 9–17 |
 | MLH-MAP-08 | Классифицировать строки | PROCESS: 9,10,11,12,14,17; AGGREGATE: 13,15,16 |
 | MLH-MAP-09 | Проверить scoring eligibility | ровно 6 строк имеют `scoring_eligible=true` |
-| MLH-MAP-10 | Проверить формулы | найдены только `K13`, `K15`, `L15`, `K16`, `L16` в A9:S17 |
-| MLH-MAP-11 | Проверить cached results | K13=35; K15=10.5; L15=864; K16=3.5; L16=288 |
-| MLH-MAP-12 | Проверить ссылки формул | для каждой из пяти формул создан `FORMULA_REFERENCE_OUTSIDE_TABLE`; пересчёта нет |
+| MLH-MAP-10 | Проверить формулы | найдены `K13`, `L13`, `K14`, `L14`, `K15`, `L15`, `K16`, `L16` в A9:S17; shared formulas раскрыты, cached values сохранены отдельно |
+| MLH-MAP-11 | Проверить cached results | K13=35; L13=2880; K14=17.5; L14=1440; K15=10.5; L15=864; K16=3.5; L16=288 |
+| MLH-MAP-12 | Проверить ссылки формул | для каждой из восьми формул создан `FORMULA_REFERENCE_OUTSIDE_TABLE`; пересчёта нет; explicit rowType строки 14 остаётся `PROCESS` |
 | MLH-MAP-13 | Проверить прямые numeric facts строки 9 | `hours_per_instance=4`, `annual_instances=12`, source refs K9/L9 |
 | MLH-MAP-14 | Проверить enum строки 9 | P9=`paper`, Q9=`non_digital`, R9=`non_machine_readable` |
 | MLH-MAP-15 | Проверить enum строки 16 | P16=`paperless`, Q16=`partially_digital`, R16=`machine_readable`; строка остаётся AGGREGATE |
