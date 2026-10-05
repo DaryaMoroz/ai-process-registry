@@ -336,7 +336,7 @@ Issue codes и последствия для профиля МЛХ опреде�
 - `resolution_decision_id`;
 - `created_at`, `resolved_at`.
 
-Open conflict, влияющий на criterion, даёт `score = null` и запрещает VERIFIED SCORE. Несовпадение V3 proxy и подтверждённого фактического manual share само по себе не создаёт Conflict.
+Open conflict, влияющий на criterion, даёт `score = null` и запрещает VERIFIED SCORE. Для V3 конфликт возникает между противоречащими подтверждёнными фактическими источниками `manual_work_share_percent`; косвенные Registry-признаки не являются альтернативными значениями этого input. V3 proxy запрещён и `manual_work_proxy` не создаётся.
 
 ## 19. Question
 

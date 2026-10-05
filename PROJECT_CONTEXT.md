@@ -148,7 +148,7 @@ PRE-SCORE может быть неполным и содержит coverage и �
 
 - F1: `confirmed_no_access → 1`, `unknown → null`;
 - F2–F5: при нескольких подтверждённых применимых правилах берётся минимальный score; неизвестное ограничение не снижает score автоматически, но создаёт `RISK_REQUIRES_VERIFICATION`; при недостаточности данных score равен `null`;
-- V3: подтверждённый `manual_work_share_percent` полностью заменяет PRE proxy в текущем расчёте; proxy сохраняется в истории; несовпадение proxy с фактом само по себе не является conflict;
+- V3: единственный input — допустимый Confirmed `manual_work_share_percent`; отсутствующий, Unknown, неподтверждённый или недопустимый для стадии input даёт `null` с причиной и missing input. V3 proxy запрещён: `paper_status`, `digitalization_level`, `machine_readability` и другие косвенные признаки не дают V3 score; `manual_work_proxy` не создаётся;
 - конфликт двух или более подтверждённых фактических источников делает затронутый criterion result равным `null` до решения человеком.
 
 Для каждой оси сохраняются `full_score`, `known_sum`, `coverage` и `min/max range`. `full_score` появляется только при наличии всех пяти критериев оси.

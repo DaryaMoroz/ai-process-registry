@@ -160,7 +160,7 @@ Rule Engine не вызывает LLM и не принимает LLM-оценк�
 
 - F1: `confirmed_no_access → 1`, `unknown → null`.
 - F2–F5: при пересечении подтверждённых применимых правил выбирается минимальный score; неизвестное ограничение создаёт `RISK_REQUIRES_VERIFICATION`, но не штрафует автоматически; при недостатке данных score равен `null`.
-- V3: подтверждённый `manual_work_share_percent` заменяет proxy в текущем расчёте; proxy остаётся в PRE history и его несовпадение с фактом не создаёт conflict.
+- V3: применяется шкала только к допустимому Confirmed `manual_work_share_percent`. Если input отсутствует, Unknown, не подтверждён или не допускается evidence policy стадии, результат `null` с reason и missing input. V3 proxy и его fallback запрещены; косвенные Registry-признаки не дают score и `manual_work_proxy` не создаётся.
 - Конфликт подтверждённых фактических источников делает затронутый результат `null` до разрешения.
 
 ## 11. Score snapshots и версия входов

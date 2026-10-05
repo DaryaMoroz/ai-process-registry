@@ -24,7 +24,7 @@
 6. утверждённых решений по профилю МЛХ, идентификаторам, evidence и чтению Excel;
 7. `Реестр МЛХ.xlsm` как официального read-only источника и тестовой книги.
 
-`REGISTRY_MAPPING_MLH.md` утверждён и является нормативным профилем импорта реестра МЛХ. Файл `МЛХ_последняя_редакция_с_изменениями.xlsx` не является официальным реестром и может использоваться только как дополнительный тестовый пример результатов обследования.
+`REGISTRY_MAPPING_MLH.md` на момент подготовки документа отсутствует. Его создание включено в обязательный этап 0. Файл `МЛХ_последняя_редакция_с_изменениями.xlsx` не является официальным реестром и может использоваться только как дополнительный тестовый пример результатов обследования.
 
 При расхождении документов применяется приоритет, установленный в `PROJECT_CONTEXT.md`. Правила scoring определяются только `SCORING_ENGINE_SPEC.md`.
 
@@ -596,7 +596,7 @@ blockers
 | RE-03 | Реализовать validation facts и evidence | Rule Engine developer | Canonical fact contract | Inferred и Unknown не участвуют в formal scoring | P0 |
 | RE-04 | Реализовать V1 Frequency | Rule Engine developer | annual_instances | Проверены границы, zero и invalid inputs | P0 |
 | RE-05 | Реализовать V2 Labor и Derived annual_labor_hours | Rule Engine developer | annual_instances, hours_per_instance | Derived содержит rule version и input fact IDs | P0 |
-| RE-06 | Реализовать V3 Manual Work и PRE proxy | Rule Engine developer | Registry mappings | Фактический процент заменяет proxy без proxy-conflict | P0 |
+| RE-06 | Реализовать V3 только по Confirmed manual_work_share_percent | Rule Engine developer | Fact/evidence contract, scoring config | Допустимый Confirmed процент даёт score по шкале; отсутствующий, Unknown, неподтверждённый или недопустимый для стадии input даёт null с причиной; V3 proxy запрещён | P0 |
 | RE-07 | Реализовать V4 Repeatability | Rule Engine developer | Structured inputs | Количественный input имеет установленный приоритет | P0 |
 | RE-08 | Реализовать V5 Problematicity | Rule Engine developer | Structured inputs | Proxy и fallback применяются только по спецификации | P0 |
 | RE-09 | Реализовать F1 Data Availability | Rule Engine developer | F1 component facts | `confirmed_no_access = 1`, `unknown = null`, итог по min компонентов | P0 |
@@ -720,11 +720,15 @@ LLM Agent не является отдельной группой агентов
 | AT-34 | F1 access = confirmed_no_access | Компонент access получает 1 |
 | AT-35 | Для F2–F5 применимы несколько подтверждённых правил | Выбирается минимальный применимый score |
 | AT-36 | Ограничение неизвестно | Score не снижается автоматически, создаётся RISK_REQUIRES_VERIFICATION или null по правилам полноты |
-| AT-37 | Подтверждён manual_work_share_percent | V3 proxy исключён из текущего scoring и сохранён в истории |
-| AT-38 | Proxy V3 отличается от фактического значения | Само отличие не создаёт conflict |
+| AT-37 | Есть допустимый Confirmed manual_work_share_percent | V3 рассчитан по утверждённой шкале, evidence и rule_id сохранены |
+| AT-38 | Есть только paper_status / digitalization_level / machine_readability | V3 = null; косвенные поля не дают score, V3 proxy запрещён |
 | AT-39 | Два подтверждённых фактических V3 источника противоречат | Создаётся conflict, score = null до разрешения |
 | AT-40 | VERIFIED SCORE с подтверждённым blocker | VERIFIED сохраняется, blocker отображается отдельно |
 | AT-41 | После интервью процесс декомпозирован | Созданы внутренние AnalysisUnit, source row не изменён |
+| AT-42 | manual_work_share_percent отсутствует или Unknown | V3 = null; указаны reason и missing input |
+| AT-43 | manual_work_share_percent не подтверждён, включая LLM-extracted | V3 = null; неподтверждённое значение не используется |
+| AT-44 | Одинаковые допустимые Confirmed V3 inputs и версия методики | Одинаковый детерминированный результат |
+| AT-45 | Confirmed interview percent передан в PRE-SCORE | Input исключён из PRE; V3 = null при отсутствии допустимого Registry percent |
 
 ---
 

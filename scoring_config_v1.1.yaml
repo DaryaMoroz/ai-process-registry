@@ -3,7 +3,7 @@ methodology_version: "1.1"
 config_status: READY_FOR_IMPLEMENTATION
 normative_source:
   file: SCORING_ENGINE_SPEC.md
-  sha256: 55e739eac2062f47451126b76a372aa1f4ad0cd59f26da443466995553e65c67
+  sha256: fbe32203b0f2dd3b7609cf2908103276970762b870e4715b9e6e2cd24cd4f77f
 
 engine_contract:
   deterministic: true
@@ -291,14 +291,7 @@ criteria:
     name: manual_work_share
     rule_id: V3_MANUAL_WORK_v1.1
     required_inputs:
-      VERIFIED_SCORE:
-        - manual_work_share_percent
-      PRE_SCORE_PROXY:
-        any_minimum_known: 2
-        from:
-          - paper_status
-          - digitalization_level
-          - machine_readability
+      - manual_work_share_percent
     inputs:
       manual_work_share_percent:
         type: number
@@ -307,15 +300,6 @@ criteria:
         valid_min_inclusive: true
         valid_max: 100
         valid_max_inclusive: true
-      paper_status:
-        type: enum
-        unit: null
-      digitalization_level:
-        type: enum
-        unit: null
-      machine_readability:
-        type: enum
-        unit: null
     thresholds:
       - score: 1
         min: 0
@@ -342,67 +326,30 @@ criteria:
         min_inclusive: false
         max: 100
         max_inclusive: true
-    proxy:
-      allowed_score_statuses: [PRE_SCORE, INTERVIEW_SCORE]
-      fact_status: Derived
-      minimum_known_features: 2
-      enum_mappings:
-        paper_status:
-          paperless: 1
-          mixed: 3
-          paper: 5
-        digitalization_level:
-          digital: 1
-          partially_digital: 3
-          non_digital: 5
-        machine_readability:
-          machine_readable: 1
-          partially_machine_readable: 3
-          non_machine_readable: 5
-      aggregation: arithmetic_mean
-      rounding_bands:
-        - score: 1
-          min: 1.0
-          min_inclusive: true
-          max: 1.49
-          max_inclusive: true
-        - score: 2
-          min: 1.5
-          min_inclusive: true
-          max: 2.49
-          max_inclusive: true
-        - score: 3
-          min: 2.5
-          min_inclusive: true
-          max: 3.49
-          max_inclusive: true
-        - score: 4
-          min: 3.5
-          min_inclusive: true
-          max: 4.49
-          max_inclusive: true
-        - score: 5
-          min: 4.5
-          min_inclusive: true
-          max: 5.0
-          max_inclusive: true
-      if_fewer_than_minimum_features_known:
-        score: null
-        status: Unknown
-    actual_replaces_proxy:
-      actual_field: manual_work_share_percent
-      required_actual_status: Confirmed
-      replace_current_score: true
-      retain_proxy_in_pre_score_history: true
-      proxy_participates_after_replacement: false
-      proxy_actual_difference_creates_conflict: false
-      conflict_only_between_confirmed_actual_sources: true
+    input_selection:
+      field: manual_work_share_percent
+      required_fact_status: Confirmed
+      stage_evidence_policy_required: true
+      fallback_allowed: false
     missing_behavior:
-      no_actual_and_proxy_unavailable_score: null
+      if_input_absent_or_null: true
+      if_input_unknown: true
+      if_input_not_confirmed: true
+      if_input_invalid: true
+      if_evidence_ineligible_for_stage: true
+      score: null
       status: Unknown
+      missing_facts: [manual_work_share_percent]
+      reason_by_condition:
+        absent_or_null: MISSING_REQUIRED_INPUT
+        unknown: UNKNOWN_INPUT
+        not_confirmed: UNCONFIRMED_INPUT
+        invalid: INVALID_INPUT
+        evidence_ineligible_for_stage: INELIGIBLE_EVIDENCE
     evidence_requirements:
       inherit_stage_policy: true
-      verified_requires_confirmed_actual: true
+      required_input_status: Confirmed
+      derived_input_allowed: false
 
   V4:
     criterion_id: V4
@@ -1020,17 +967,6 @@ derived_fact_rules:
     if_any_input_null:
       output_value: null
     provenance_required: true
-  manual_work_proxy:
-    derivation_rule_id: DERIVE_MANUAL_WORK_PROXY_v1.1
-    derivation_rule_version: "1.1"
-    source_config_path: criteria.V3.proxy
-    operation: arithmetic_mean_then_round_by_configured_bands
-    minimum_known_inputs: 2
-    output:
-      field: manual_work_proxy
-      unit: score_1_5
-      fact_status: Derived
-    provenance_required: true
   problem_proxy:
     derivation_rule_id: DERIVE_PROBLEM_PROXY_v1.1
     derivation_rule_version: "1.1"
@@ -1200,7 +1136,9 @@ completeness_validation:
     all_enum_mappings_in_config: true
     f2_f5_overlap_policy_defined: true
     f1_unknown_is_null: true
-    v3_actual_replaces_proxy: true
+    v3_requires_confirmed_manual_work_share_percent: true
+    v3_registry_proxy_forbidden: true
+    v3_fallback_disabled: true
     derived_rules_require_provenance: true
     interpretation_covers_full_range_5_25_without_gaps: true
     axis_aggregation_defined: true

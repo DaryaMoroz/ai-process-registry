@@ -85,13 +85,13 @@
 
 **Дано:** официальный `Реестр МЛХ.xlsm`.  
 **Когда:** Parser читает `A9:S17`.  
-**Тогда:** формулы найдены в точности в `K13`, `L13`, `K14`, `L14`, `K15`, `L15`, `K16`, `L16`; shared formulas группы `si=0`, `ref=K13:L14` раскрыты от master `K13`; формулы сохранены для аудита и не пересчитаны.
+**Тогда:** формулы найдены в точности в `K13`, `K15`, `L15`, `K16`, `L16`; формулы сохранены для аудита и не пересчитаны.
 
 ### TC-13. Cached results формул
 
 **Дано:** формульные ячейки пилота.  
 **Когда:** читаются сохранённые результаты книги.  
-**Тогда:** cached values равны `K13=35`, `L13=2880`, `K14=17.5`, `L14=1440`, `K15=10.5`, `L15=864`, `K16=3.5`, `L16=288`; они сохраняются отдельно от формул, строки AGGREGATE не участвуют в scoring, а строка 14 остаётся PROCESS по явному профильному mapping.
+**Тогда:** cached values равны `K13=35`, `K15=10.5`, `L15=864`, `K16=3.5`, `L16=288`; они сохраняются, но строки AGGREGATE не участвуют в scoring.
 
 ### TC-14. `.xlsm` не пересчитывается
 
@@ -267,17 +267,17 @@
 **Когда:** выполняется scoring.  
 **Тогда:** score равен `null`, создаётся `RISK_REQUIRES_VERIFICATION`; автоматический штраф не применяется.
 
-### TC-42. V3 фактическая доля заменяет proxy
+### TC-42. V3 только по допустимому Confirmed проценту
 
-**Дано:** существует PRE proxy и подтверждён `manual_work_share_percent`.  
+**Дано:** evaluator fixture содержит допустимый Confirmed `manual_work_share_percent` в единицах percent и evidence выбранной стадии; для PRE это Registry source. Fixture не добавляет колонку в официальный mapping.
 **Когда:** выполняется текущий scoring.  
-**Тогда:** V3 использует только подтверждённое фактическое значение; proxy исключён из текущего расчёта и сохранён в PRE history.
+**Тогда:** V3 использует только фактический процент по неизменённой шкале: 0–10 → 1; >10–30 → 2; >30–60 → 3; >60–85 → 4; >85–100 → 5. Проверены границы и значения по обе стороны; сохранены evidence и rule_id.
 
-### TC-43. V3 proxy mismatch не создаёт conflict
+### TC-43. Косвенные Registry-признаки не дают V3 score
 
-**Дано:** V3 proxy отличается от подтверждённого `manual_work_share_percent`.  
+**Дано:** есть Confirmed `paper_status`, `digitalization_level`, `machine_readability`, но нет допустимого Confirmed `manual_work_share_percent`.
 **Когда:** строится карточка и score.  
-**Тогда:** Conflict не создаётся только из-за этого расхождения; фактическое значение имеет приоритет.
+**Тогда:** V3 = `null`; missing input — `manual_work_share_percent`. V3 proxy запрещён: `manual_work_proxy` не создаётся, косвенные поля не являются альтернативным фактическим процентом.
 
 ### TC-44. Confirmed-vs-confirmed conflict
 
@@ -321,7 +321,7 @@
 
 **Дано:** `scoring_config_v1.1.yaml`.  
 **Когда:** выполняется completeness validation.  
-**Тогда:** найдены ровно 10 criterion IDs и их rule IDs, все thresholds, enum mappings, mandatory inputs, units, missing/null behavior, evidence и stage eligibility, Derived/conflict policies, F2–F5 overlap, V3 proxy replacement, F1 access mapping, axis aggregation, interpretation levels, blocker/risk rules и metadata version `1.1`.
+**Тогда:** найдены ровно 10 criterion IDs и их rule IDs, все thresholds, enum mappings, mandatory inputs, units, missing/null behavior, evidence и stage eligibility, Derived/conflict policies, F2–F5 overlap, V3 Confirmed-percent requirement и запрет proxy/fallback, F1 access mapping, axis aggregation, interpretation levels, blocker/risk rules и metadata version `1.1`.
 
 ### TC-51. Неполная scoring config блокирует запуск
 
@@ -372,6 +372,44 @@
 **Дано:** сформированы карточки и snapshots.  
 **Когда:** пользователь экспортирует аналитическое представление.  
 **Тогда:** экспорт содержит source identifiers, AnalysisUnit, stage/version, axes, coverage, risks/blockers и audit references; официальный Excel не изменяется.
+
+## 8.1. Дополнительные проверки нормативного V3
+
+### TC-59. V3 input отсутствует
+
+**Дано:** `manual_work_share_percent` отсутствует или равен `null`.
+**Когда:** выполняется V3 evaluator.
+**Тогда:** score = `null`; reason объясняет отсутствие input; missing input — `manual_work_share_percent`; fallback отсутствует.
+
+### TC-60. V3 input Unknown
+
+**Дано:** `manual_work_share_percent` имеет статус Unknown.
+**Когда:** выполняется V3 evaluator.
+**Тогда:** score = `null` с причиной неизвестности; значение не предполагается и не заменяется 1.
+
+### TC-61. V3 input не подтверждён
+
+**Дано:** числовой процент имеет статус Inferred либо не имеет допустимого подтверждения.
+**Когда:** выполняется V3 evaluator.
+**Тогда:** score = `null` с причиной отсутствия подтверждения; косвенные Registry-признаки не становятся fallback.
+
+### TC-62. Неподтверждённый LLM-extracted percent
+
+**Дано:** LLM извлёк числовой `manual_work_share_percent`, но human confirmation отсутствует.
+**Когда:** запускается PRE-SCORE.
+**Тогда:** input исключён из scoring; V3 = `null`; причина и missing input доступны карточке.
+
+### TC-63. Детерминированность V3
+
+**Дано:** одинаковые допустимые Confirmed percent, evidence, input snapshot и methodology version `1.1`.
+**Когда:** V3 evaluator выполняется повторно.
+**Тогда:** score, rule_id и explanation детерминированно совпадают.
+
+### TC-64. Confirmed interview percent не становится Registry PRE fact
+
+**Дано:** есть Confirmed interview `manual_work_share_percent`, но допустимого Confirmed Registry percent нет.
+**Когда:** формируется PRE input snapshot.
+**Тогда:** interview input исключён; V3 = `null` с причиной недопустимого evidence для PRE. Проверка не требует реализации нового interview workflow.
 
 ## 9. Критерии приёмки MVP
 
