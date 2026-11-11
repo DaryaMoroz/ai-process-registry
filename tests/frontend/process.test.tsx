@@ -47,7 +47,7 @@ describe("FE-20–28 / FX-07–15: backend-assembled card and honest partial PRE
   it("FX-09/13 renders range, known sum and coverage as opaque backend values; null is —", async () => {
     const result = card();
     // These opaque read-model values deliberately do not mirror criterion arithmetic.
-    result.activeScoreSnapshot!.value = { ...result.activeScoreSnapshot!.value, knownSum: 18, coverage: 0.8, range: [19, 23] };
+    result.activeScoreSnapshot!.value = { ...result.activeScoreSnapshot!.value, knownSum: 18, knownCount: 4, unknownCount: 1, coverage: 0.8, range: [19, 23] };
     await mount(apiStub({ openProcess: vi.fn(async () => result) }));
     expect(screen.getByText("19–23")).toBeVisible();
     const valueAxis = screen.getByRole("heading", { name: "Ценность" }).closest("section")!;

@@ -1,4 +1,4 @@
-import type { ProcessCardView, RegistryProcessingView, SourceDetailsView } from "../../src/shared/contracts";
+import type { ProcessCardView, RegistryProcessingView, SourceDetailsView, Slice02Criterion, Slice02Snapshot } from "../../src/shared/contracts";
 
 // Opaque backend read models for FX-01–15. No formulas, thresholds or scoring config.
 export const registryFixture: RegistryProcessingView = {
@@ -23,3 +23,31 @@ export const cardFixture: ProcessCardView = {
 export const registrySource: SourceDetailsView = { sourceReferenceId: "registry-source", sourceType: "registry", factStatus: "Confirmed", sourceName: "fixture.xlsm", sheet: "Лист3", row: 14, column: "L", coordinate: "L14", excerptOrValue: 1440 };
 export const derivedSource: SourceDetailsView = { sourceReferenceId: "derived-source", sourceType: "calculated", factStatus: "Derived", excerptOrValue: 25200,
   derivation: { ruleId: "DERIVE_ANNUAL_LABOR_HOURS_v1.1", ruleVersion: "1.1", trace: "Backend derivation trace", inputSourceReferenceIds: ["registry-source"] } };
+
+// Genuine opaque ten-evaluator backend fixture, independent of the legacy card above.
+function evaluated(id: string, label: string, ruleId: string, score: number | null, explanation: string, missingInputs: string[], sourceReferenceIds: string[], inputFactIds: string[]): Slice02Criterion {
+  return { id, label, ruleId, score, explanation, missingInputs, sourceReferenceIds,
+    reasonCode: score === null ? "MISSING_REQUIRED_INPUT" : "RULE_APPLIED", appliedRuleTrace: `Backend trace ${id}`,
+    provenance: { scoreSnapshotId: "slice02-score-fixture", inputFactIds }, conflictIds: [], riskIds: [], blockerIds: [] };
+}
+export const slice02SnapshotFixture: Slice02Snapshot = {
+  scoreSnapshotId: "slice02-score-fixture", inputSnapshotId: "slice02-input-fixture", methodologyVersion: "1.1", stage: "PRE_SCORE",
+  resultContractVersion: "slice02.pre-score.v1", engineVersion: "slice-02-engine-1", scoringConfigVersion: "fixture-config-content-identity",
+  conflicts: [], risks: [], blockers: [],
+  value: { scoreSnapshotId: "slice02-score-fixture", maxScore: 25, fullScore: null, knownSum: 10, knownCount: 2, unknownCount: 3, coverage: .4, range: [13, 25], criteria: [
+    evaluated("V1", "Частота процесса", "V1_FREQUENCY_v1.1", 5, "Объяснение от backend", [], ["registry-source"], ["fact-annual"]),
+    evaluated("V2", "Трудозатраты", "V2_LABOR_v1.1", 5, "Расчёт от backend", [], ["derived-source"], ["fact-labor"]),
+    evaluated("V3", "Доля ручной работы", "V3_MANUAL_WORK_v1.1", null, "Нет данных", ["manual_work_share_percent"], [], []),
+    evaluated("V4", "Повторяемость", "V4_REPEATABILITY_v1.1", null, "Нет данных", ["standard_scenario_share_percent"], [], []),
+    evaluated("V5", "Проблемность", "V5_PROBLEMATICITY_v1.1", null, "Нет данных", ["problem_case_share_percent"], [], []),
+  ] },
+  feasibility: { scoreSnapshotId: "slice02-score-fixture", maxScore: 25, fullScore: null, knownSum: 0, knownCount: 0, unknownCount: 5, coverage: 0, range: [5, 25], criteria: [
+    evaluated("F1", "Доступность данных", "F1_DATA_AVAILABILITY_v1.1", null, "Нет данных", ["data_access_level"], [], []),
+    evaluated("F2", "Простота интеграций", "F2_INTEGRATION_SIMPLICITY_v1.1", null, "Нет данных", ["integrations"], [], []),
+    evaluated("F3", "Техническая реализуемость", "F3_TECHNICAL_FEASIBILITY_v1.1", null, "Нет данных", ["required_technologies"], [], []),
+    evaluated("F4", "MVP за 3 месяца", "F4_MVP_3_MONTHS_v1.1", null, "Нет данных", ["mvp_scope_defined"], [], []),
+    evaluated("F5", "Измеримость результата", "F5_MEASURABILITY_v1.1", null, "Нет данных", ["primary_kpi_defined"], [], []),
+  ] },
+};
+export const slice02CardFixture: ProcessCardView = { ...cardFixture, activeScoreSnapshot: slice02SnapshotFixture,
+  sourceFacts: [{ label: "Факт реестра", value: 1440, factStatus: "Confirmed", sourceReferenceIds: ["registry-source"] }] };

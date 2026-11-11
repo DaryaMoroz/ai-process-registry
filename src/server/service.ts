@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import type { Database, DQIssue, ProcessRecord, RegistryRecord, ScoreSnapshot, InputSnapshot } from "./domain";
-import type { ProcessCardView, RegistryProcessingView, SourceDetailsView, WorkbookMetadataResult } from "@/shared/contracts";
+import { RESULT_CONTRACT_VERSION, type ProcessCardView, type RegistryProcessingView, type SourceDetailsView, type WorkbookMetadataResult } from "@/shared/contracts";
+import { isSlice02Snapshot } from "@/shared/scoreContract";
 import { LocalStore, audit } from "./store";
 import { ApplicationError, safeError } from "./errors";
 import { sha256 } from "./identity";
@@ -9,8 +10,9 @@ import { readWorkbook } from "./registry/parser";
 import { PROFILE, columns } from "./registry/profile";
 import { mapSheet } from "./registry/mapping";
 import { loadConfig, type LoadedConfig } from "./scoring/config";
-import { calculatePreScore, eligibleForPre } from "./scoring/engine";
+import { calculatePreScore, eligibleForPre, excludedReason, ENGINE_VERSION, assertPublishable } from "./scoring/engine";
 import { ownValue } from "./lookup";
+import { conditionFields } from "./scoring/conditions";
 
 type ScoreJob = { processId: string; attemptId: string };
 const requireRegistry = (db: Database, registryVersionId: string): RegistryRecord => {
@@ -34,7 +36,9 @@ function view(db: Database, record: ProcessRecord): ProcessCardView {
       officialProcessCode: record.facts.find(f => f.field === "official_process_code")?.value as string ?? null,
       sourceReferenceId: row.cells.find(c => c.canonicalField === "process_name")!.sourceCellId },
     scoreProcessing: { state: attempt?.state ?? "PENDING", error: attempt?.error ?? null },
-    activeScoreSnapshot: snapshot ? { scoreSnapshotId: snapshot.scoreSnapshotId, inputSnapshotId: snapshot.inputSnapshotId, methodologyVersion: snapshot.methodologyVersion, stage: snapshot.stage, value: snapshot.value, feasibility: snapshot.feasibility } : null,
+    activeScoreSnapshot: snapshot ? { scoreSnapshotId: snapshot.scoreSnapshotId, inputSnapshotId: snapshot.inputSnapshotId, methodologyVersion: snapshot.methodologyVersion, stage: snapshot.stage, value: snapshot.value, feasibility: snapshot.feasibility,
+      ...(snapshot.resultContractVersion ? { resultContractVersion: snapshot.resultContractVersion, engineVersion: snapshot.engineVersion, scoringConfigVersion: snapshot.scoringConfigVersion,
+        conflicts: snapshot.conflicts, risks: snapshot.risks, blockers: snapshot.blockers, calculatedAt: snapshot.calculatedAt } : {}) } : null,
     sourceFacts: row.cells.filter(c => c.canonicalField !== "unmapped").map(c => ({ label: columns.find(col => col.field === c.canonicalField)!.header.replaceAll("*", ""), value: c.normalizedValue,
       unit: columns.find(col => col.field === c.canonicalField)?.unit ?? null, factStatus: c.normalizedValue === null ? "Unknown" : "Confirmed", sourceReferenceIds: [c.sourceCellId] })),
     dataQualityIssues: record.issues,
@@ -123,12 +127,25 @@ export class RegistryService {
     return this.store.transaction(db => {
       const record = requireProcess(db, processId);
       const previous = record.attempts.at(-1);
+      let checksum: string | undefined;
+      try { checksum = this.config().checksum; } catch { /* runScore publishes a safe config failure while retaining the card. */ }
+      const inputIdentity = sha256(JSON.stringify({ facts: record.facts, cardVersion: record.cardVersion, analysisUnitId: record.analysisUnit.analysisUnitId }));
+      const active = record.scoreSnapshots.find(s => s.scoreSnapshotId === record.activeScoreSnapshotId);
+      const compatible = active && isSlice02Snapshot(active) && active.engineVersion === ENGINE_VERSION && active.configChecksum === checksum && active.processCardVersion === record.cardVersion &&
+        record.inputSnapshots.some(s => s.inputSnapshotId === active.inputSnapshotId && s.inputIdentity === inputIdentity);
+      const sameAttempt = previous?.resultContractVersion === RESULT_CONTRACT_VERSION && previous.engineVersion === ENGINE_VERSION && previous.inputIdentity === inputIdentity && previous.configChecksum === checksum;
       let job: ScoreJob | null = null;
       if (retry && previous?.state === "FAILED" && !previous.error?.retryable) throw new ApplicationError("RETRY_NOT_ALLOWED", "Повтор этого расчёта недоступен.", 409);
-      const create = retry ? previous?.state === "FAILED" && previous.error?.retryable : !previous && !record.activeScoreSnapshotId;
+      const create = retry ? previous?.state === "FAILED" && previous.error?.retryable : !compatible && (!sameAttempt || previous?.state === "AVAILABLE");
       if (create) {
         const attemptId = randomUUID();
-        record.attempts.push({ attemptId, inputSnapshotId: null, state: "PENDING", error: null, createdAt: new Date().toISOString(), finishedAt: null });
+        if (previous?.state === "PENDING" || previous?.state === "RUNNING") {
+          previous.state = "FAILED"; previous.finishedAt = new Date().toISOString();
+          previous.error = { code: "ATTEMPT_SUPERSEDED", message: "Расчёт заменён попыткой для текущих входных данных.", retryable: false };
+        }
+        record.activeScoreSnapshotId = null;
+        record.attempts.push({ attemptId, inputSnapshotId: null, state: "PENDING", error: null, createdAt: new Date().toISOString(), finishedAt: null,
+          resultContractVersion: RESULT_CONTRACT_VERSION, engineVersion: ENGINE_VERSION, configChecksum: checksum, inputIdentity });
         job = { processId, attemptId };
         audit(db, retry ? "SCORE_RETRY_REQUESTED" : "SCORE_PENDING", processId, { attemptId }, "local_user");
       }
@@ -143,22 +160,28 @@ export class RegistryService {
       const input = this.store.transaction(db => {
         const record = requireProcess(db, job.processId), attempt = record.attempts.at(-1)!;
         if (attempt.attemptId !== job.attemptId || attempt.state !== "PENDING") return null;
-        const facts = record.facts.filter(f => eligibleForPre(f, record.facts));
+        const facts = record.facts.filter(f => eligibleForPre(f, record.facts) && (f.field !== "manual_work_share_percent" || f.factStatus === "Confirmed"));
+        const excludedInputReasons = Object.fromEntries(record.facts.filter(f => !facts.some(input => input.factId === f.factId)).map(f => [f.field, excludedReason(f)]));
+        // V3 requires Confirmed percent even when a generic Derived fact is stage-eligible.
+        for (const fact of record.facts) if (fact.field === "manual_work_share_percent" && fact.factStatus === "Derived") excludedInputReasons[fact.field] = "UNCONFIRMED_INPUT";
+        const unconfirmedBlockerCodes = Object.entries(loaded.config.blocker_policy.rules).filter(([, rule]) => conditionFields(rule.trigger).some(field => record.facts.some(f => f.field === field && f.value !== null && (f.factStatus !== "Confirmed" || !eligibleForPre(f, record.facts))))).map(([code]) => code);
+        const inputIdentity = sha256(JSON.stringify({ facts: record.facts, cardVersion: record.cardVersion, analysisUnitId: record.analysisUnit.analysisUnitId }));
         // Retry reuses an identical frozen input, never overwrites an earlier result.
-        let input = record.inputSnapshots.find(s => s.configChecksum === loaded.checksum && s.cardVersion === record.cardVersion);
+        let input = record.inputSnapshots.find(s => s.configChecksum === loaded.checksum && s.cardVersion === record.cardVersion && s.inputIdentity === inputIdentity);
         if (!input) {
           input = { inputSnapshotId: randomUUID(), analysisUnitId: record.analysisUnit.analysisUnitId, methodologyVersion: loaded.config.methodology_version,
             configVersion: loaded.config.config_schema_version, configChecksum: loaded.checksum, configYaml: loaded.yaml, mappingVersion: PROFILE.version,
-            cardVersion: record.cardVersion, createdAt: attempt.createdAt, facts: structuredClone(facts), conflictFields: [] };
+            cardVersion: record.cardVersion, createdAt: attempt.createdAt, facts: structuredClone(facts), conflictFields: [], excludedInputReasons, unconfirmedBlockerCodes, inputIdentity };
           record.inputSnapshots.push(input);
           audit(db, "INPUT_SNAPSHOT_CREATED", record.processId, { inputSnapshotId: input.inputSnapshotId, factIds: facts.map(f => f.factId), configChecksum: loaded.checksum });
         }
-        attempt.inputSnapshotId = input.inputSnapshotId; attempt.state = "RUNNING";
+        attempt.inputSnapshotId = input.inputSnapshotId; attempt.configChecksum = loaded.checksum; attempt.inputIdentity = inputIdentity; attempt.state = "RUNNING";
         audit(db, "SCORE_RUNNING", record.processId, { attemptId: attempt.attemptId });
         return input;
       });
       if (!input) return;
       const result = await this.scorer(input);
+      assertPublishable(result, input);
       this.store.transaction(db => {
         const record = requireProcess(db, job.processId), attempt = record.attempts.at(-1)!;
         if (attempt.attemptId !== job.attemptId || attempt.state !== "RUNNING") return;

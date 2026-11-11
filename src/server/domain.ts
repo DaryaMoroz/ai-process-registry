@@ -17,10 +17,11 @@ export type DQIssue = DataQualityIssueViewModel & {
   rawEvidence: Value; mappingVersion: string; status: "OPEN";
 };
 export type Fact = {
-  factId: string; analysisUnitId: string; field: string; value: Value; unit: string | null;
+  factId: string; analysisUnitId: string; field: string; value: FactValue; unit: string | null;
   factStatus: FactStatus; sourceType: SourceType; sourceReferenceIds: string[];
   derivation?: { ruleId: string; ruleVersion: string; inputFactIds: string[]; trace: string };
 };
+export type FactValue = Value | FactValue[] | { [key: string]: FactValue };
 export type SourceReference = SourceDetailsView & {
   registryVersionId?: string; sourceRowId?: string; sourceCellId?: string; mappingVersion?: string;
   rawValue?: Value; formula?: string | null; cachedValue?: Value; normalizedValue?: Value;
@@ -35,6 +36,9 @@ export type InputSnapshot = {
   inputSnapshotId: string; analysisUnitId: string; methodologyVersion: string; configVersion: string;
   configChecksum: string; configYaml: string; mappingVersion: string; cardVersion: number;
   createdAt: string; facts: Fact[]; conflictFields: string[];
+  excludedInputReasons?: Record<string, string>;
+  inputIdentity?: string;
+  unconfirmedBlockerCodes?: string[];
 };
 export type CriterionTrace = {
   criterionId: string; ruleId: string; score: number | null; status: FactStatus;
@@ -47,6 +51,7 @@ export type ScoreSnapshot = ActiveScoreSnapshot & {
   criterionResults: CriterionTrace[]; derivedFacts: Fact[]; sourceReferences: SourceReference[];
 };
 export type ScoreAttempt = {
+  resultContractVersion?: string; engineVersion?: string; configChecksum?: string; inputIdentity?: string;
   attemptId: string; inputSnapshotId: string | null; state: ProcessCardView["scoreProcessing"]["state"];
   error: ProcessCardView["scoreProcessing"]["error"]; createdAt: string; finishedAt: string | null;
 };

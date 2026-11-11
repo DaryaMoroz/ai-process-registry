@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, useId, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { X, AlertCircle, Info } from "lucide-react";
 
 export function Button({ children, variant = "primary", className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "quiet" }) {
@@ -13,6 +13,10 @@ export function Alert({ children, tone = "error", retry }: { children: ReactNode
   return <div className={`alert alert-${tone}`} role={tone === "error" ? "alert" : "status"}><Icon size={20} aria-hidden="true" /><div>{children}{retry && <div className="space-top"><Button variant="secondary" onClick={retry}>Повторить</Button></div>}</div></div>;
 }
 export function Skeleton({ label = "Загрузка…" }: { label?: string }) { return <div className="skeleton" role="status" aria-live="polite"><span>{label}</span><div /><div /><div /></div>; }
+export function Disclosure({ label, children }: { label: string; children: ReactNode }) {
+  const id = useId(), [open, setOpen] = useState(false);
+  return <div><Button variant="quiet" aria-expanded={open} aria-controls={id} onClick={() => setOpen(value => !value)}>{label}</Button><div id={id} hidden={!open}>{children}</div></div>;
+}
 export function Drawer({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {

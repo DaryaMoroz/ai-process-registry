@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import type { Api } from "../../src/shared/api";
 import type { ProcessCardView, RegistryProcessingView, WorkbookMetadataResult } from "../../src/shared/contracts";
-import { cardFixture, registryFixture, registrySource } from "../fixtures/contracts";
+import { slice02CardFixture, registryFixture, registrySource } from "../fixtures/contracts";
 
 export function deferred<T>() {
   let resolve!: (value: T) => void, reject!: (reason: unknown) => void;
@@ -9,7 +9,7 @@ export function deferred<T>() {
   return { promise, resolve, reject };
 }
 export const registry = (overrides: Partial<RegistryProcessingView> = {}): RegistryProcessingView => ({ ...structuredClone(registryFixture), ...overrides });
-export const card = (overrides: Partial<ProcessCardView> = {}): ProcessCardView => ({ ...structuredClone(cardFixture), ...overrides });
+export const card = (overrides: Partial<ProcessCardView> = {}): ProcessCardView => ({ ...structuredClone(slice02CardFixture), ...overrides });
 export const metadata = (): WorkbookMetadataResult => ({ ...registry(), state: "READING" });
 export function apiStub(overrides: Partial<Api> = {}): Api {
   return {

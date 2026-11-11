@@ -48,8 +48,17 @@ export type ScoreCriterionViewModel = {
   ruleId: string | null;
   missingInputs: string[];
   sourceReferenceIds: string[];
+  reasonCode?: string;
+  provenance?: { scoreSnapshotId: string; inputFactIds: string[] };
+  appliedRuleTrace?: string;
+  conflictIds?: string[];
+  riskIds?: string[];
+  blockerIds?: string[];
 };
 export type ScoreAxisViewModel = {
+  scoreSnapshotId?: string;
+  knownCount?: number;
+  unknownCount?: number;
   maxScore: number;
   fullScore: number | null;
   knownSum: number;
@@ -58,12 +67,38 @@ export type ScoreAxisViewModel = {
   criteria: ScoreCriterionViewModel[];
 };
 export type ActiveScoreSnapshot = {
+  resultContractVersion?: string;
+  engineVersion?: string;
+  scoringConfigVersion?: string;
+  calculatedAt?: string;
+  conflicts?: ScoreConcernViewModel[];
+  risks?: ScoreConcernViewModel[];
+  blockers?: ScoreConcernViewModel[];
   scoreSnapshotId: string;
   inputSnapshotId: string;
   methodologyVersion: string;
   stage: ScoreStatus;
   value: ScoreAxisViewModel;
   feasibility: ScoreAxisViewModel;
+};
+export const RESULT_CONTRACT_VERSION = "slice02.pre-score.v1";
+export type ScoreConcernViewModel = {
+  id: string; scoreSnapshotId: string; type: "CONFLICT" | "RISK" | "BLOCKER";
+  code: string; description: string; status: string;
+  affectedCriterionIds: string[];
+  confirmationState: "CONFIRMED" | "UNCONFIRMED" | "UNKNOWN" | "NOT_APPLICABLE";
+  sourceReferenceIds: string[]; severity?: string | null;
+};
+export type Slice02Criterion = ScoreCriterionViewModel & Required<Pick<ScoreCriterionViewModel,
+  "reasonCode" | "provenance" | "appliedRuleTrace" | "conflictIds" | "riskIds" | "blockerIds">>;
+export type Slice02Axis = Omit<ScoreAxisViewModel, "criteria"> & {
+  scoreSnapshotId: string; knownCount: number; unknownCount: number;
+  range: [number, number]; criteria: Slice02Criterion[];
+};
+export type Slice02Snapshot = Omit<ActiveScoreSnapshot, "value" | "feasibility"> & {
+  resultContractVersion: typeof RESULT_CONTRACT_VERSION; engineVersion: string; scoringConfigVersion: string;
+  conflicts: ScoreConcernViewModel[]; risks: ScoreConcernViewModel[]; blockers: ScoreConcernViewModel[];
+  value: Slice02Axis; feasibility: Slice02Axis;
 };
 export type ProcessCardView = {
   processId: string;
