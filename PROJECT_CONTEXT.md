@@ -2,9 +2,13 @@
 
 # Актуальный контекст проекта «ИИ-агент анализа реестра процессов»
 
-**Статус документа:** актуальный источник принятых проектных решений  
-**Методика scoring:** `1.1`  
-**Статус проекта:** `READY FOR CODEX`
+**Статус документа:** актуальный источник принятых проектных решений
+
+**Активная production methodology runtime:** `1.1`
+
+**Будущий baseline методики:** `2` существует отдельно и ещё не является runtime
+
+**Статус проекта:** `SLICE 01: FROZEN; SLICE 02: IMPLEMENTED / ACCEPTED / FROZEN`
 
 ## 1. Назначение документа
 
@@ -204,13 +208,14 @@ Backend/Orchestrator управляет жизненным циклом загр
 
 ## 14. Текущая готовность
 
-Утверждены:
+Текущее состояние:
 
-- `SCORING_ENGINE_SPEC.md` — `READY FOR IMPLEMENTATION`;
-- `REGISTRY_MAPPING_MLH.md` — `READY FOR IMPLEMENTATION`;
-- `scoring_config_v1.1.yaml` — `SCORING CONFIG STATUS: READY FOR IMPLEMENTATION`;
-- `MVP_PASSPORT_AND_BACKLOG.md` — `READY FOR CODEX`.
+- Slice 01 — `FROZEN`;
+- Slice 02 — `IMPLEMENTED / ACCEPTED / FROZEN`, implementation commit `0257430e87ec37bb560993fd2cab7490b133b513`;
+- active production methodology runtime — `1.1`;
+- methodology v2 существует как отдельный будущий baseline и не используется текущим runtime;
+- следующий этап — design и review Slice 03 (`Evidence Collection & Human Confirmation`), а не реализация без утверждённого design.
 
-Критических методических или mapping-неопределённостей, блокирующих начало разработки, нет.
+Доказательная цепочка приёмки Slice 02 хранится в `SLICE_02_ACCEPTANCE_RECORD.md`. Контракт Slice 02 остаётся замороженным; Slice 03 пока имеет только planned backlog baseline.
 
-`DOCUMENTATION STATUS: READY FOR CODEX`
+`DOCUMENTATION STATUS: POST-SLICE 02 CONSOLIDATED`

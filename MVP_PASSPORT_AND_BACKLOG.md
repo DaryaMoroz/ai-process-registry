@@ -4,11 +4,13 @@
 
 ## ИИ-агент анализа реестра процессов
 
-**Статус документа:** готов к передаче в разработку  
+**Статус документа:** актуализирован после приёмки Slice 02
+
 **Версия:** 1.0  
 **Целевой набор пилота:** лист `Лист3` файла `Реестр МЛХ.xlsm`  
-**Статус Rule Engine:** `READY FOR IMPLEMENTATION`  
-**Итоговый статус проекта:** `READY FOR CODEX`
+**Статус Rule Engine:** `METHODOLOGY 1.1 ACTIVE; SLICE 02 PRE-SCORE IMPLEMENTED / ACCEPTED / FROZEN`
+
+**Итоговый статус проекта:** `SLICE 02 IMPLEMENTED / ACCEPTED / FROZEN; SLICE 03 DESIGN PLANNED`
 
 ---
 
@@ -682,7 +684,7 @@ LLM Agent не является отдельной группой агентов
 | AT-01 Upload and immutability | TC-01, TC-02 | Файл принят, registry_id и checksum созданы, оригинал не изменён |
 | AT-02 Source preservation | TC-03, TC-28 | Официальные названия сохранены, порядок колонок не критичен |
 | AT-03 Missing | TC-04, TC-20 | Пустое значение становится null, фиктивный score отсутствует |
-| AT-04 VALUE math | TC-05, TC-06 | known_sum, coverage, range и full score рассчитаны корректно |
+| AT-04 VALUE math | TC-31, TC-32 | known_sum, coverage, range и full score рассчитаны корректно |
 | AT-05 FEASIBILITY math | TC-07 | Полная ось даёт точный score и range score..score |
 | AT-06 PRE-SCORE | TC-08 | PRE использует только Confirmed Registry и допустимые Derived facts |
 | AT-07 Missing question | TC-09 | По missing создаётся связанный вопрос |
@@ -702,6 +704,8 @@ LLM Agent не является отдельной группой агентов
 | AT-21 Invalid workbook | TC-26 | Понятная ошибка, некорректный результат не создаётся |
 | AT-22 Missing target sheet | TC-27 | Произвольный лист не выбирается молча |
 | AT-23 Human decision | TC-30 | Высокий score не создаёт автоматическое утверждение |
+
+`DOC-S02-01`: **CLOSED** — трассировка AT-04 исправлена на `TC-31 / TC-32`; нумерация и содержание tests не изменены.
 
 ## 16.2. Дополнительные тесты по утверждённым решениям
 
@@ -815,7 +819,9 @@ GPT-5.6 Sol High
 
 ---
 
-# 20. Рекомендуемый первый вертикальный slice
+# 20. Frozen historical baseline — Slice 01
+
+Раздел сохранён как историческая спецификация первого вертикального slice. Slice 01 завершён и заморожен; он не является следующим этапом реализации.
 
 ## Название
 
@@ -881,14 +887,46 @@ MLH Registry → One Process Card → PRE-SCORE
 - интеграционный контракт Rule Engine и механику неполной оси;
 - объяснимый результат.
 
-После успешного slice можно безопасно расширить обработку на все процессы `Лист3`, а затем добавить interview loop и LLM Agent.
+После Slice 01 детерминированный PRE-SCORE был расширен и принят в Slice 02. Дальнейший evidence-collection loop относится к planned design Slice 03 из §21.
+
+---
+
+# 21. Planned Slice 03 baseline — неутверждённый design
+
+**Slice 03 — Evidence Collection & Human Confirmation** находится на стадии проектирования. Этот backlog baseline является planned scope, не утверждённым и не замороженным контрактом; реализация не должна начинаться до отдельного design и review.
+
+Предполагаемые каналы сбора evidence:
+
+- ручное интервью;
+- существующий расширенный Excel-шаблон;
+- DOCX.
+
+Предполагаемая общая цепочка:
+
+```text
+source → FactCandidate → Human Confirmation → Confirmed Fact → new ScoreSnapshot
+```
+
+Будущие design topics:
+
+- модели `FactCandidate` / `Confirmed Fact`;
+- provenance и audit-связи;
+- конфликты между источниками;
+- mapping расширенного Excel;
+- DOCX extraction;
+- interview questions;
+- human-readable explanations;
+- пересмотр названия `INTERVIEW_SCORE`, поскольку данные могут поступать не только из интервью.
+
+Эти пункты не являются frozen contract Slice 03 и не меняют runtime или semantics Slice 01/02.
 
 ---
 
 # Итоговый статус
 
 ```text
-READY FOR CODEX
+SLICE 02 IMPLEMENTED / ACCEPTED / FROZEN
+SLICE 03 DESIGN PLANNED / NOT APPROVED
 ```
 
-Методических решений, блокирующих начало разработки, нет. Первый этап Codex должен начинаться с нормативной синхронизации и рекомендованного вертикального slice, без расширения scope.
+Следующий этап — проектирование и review Slice 03. Реализация Slice 03 до утверждения отдельного design не разрешена.
