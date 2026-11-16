@@ -6,9 +6,9 @@
 **Vertical slice:** Slice 02 — Full Deterministic PRE-SCORE Process Card
 **Версия integration contract:** 1.0.1 — локальная correction B-01; `resultContractVersion` сохраняется
 **Дата консолидации:** 2026-10-02
-**Статус:** SLICE 02 CONTRACT PACKAGE: READY FOR RE-REVIEW
+**Статус:** SLICE 02 CONTRACT PACKAGE: APPROVED / FROZEN
 
-Документ объединяет утверждённые backend/frontend решения и фиксирует точные application/read-model поля для их интеграции. Это нормативный integration contract, переданный на независимый re-review после локальной correction B-01; статус APPROVED этому документу не присвоен. Создание package не является разрешением запуска implementation.
+Документ объединяет утверждённые backend/frontend решения и фиксирует точные application/read-model поля для их интеграции. Это нормативный integration contract, одобренный и замороженный после исправления contract B-01 и независимого targeted re-review. История review и итоговая приёмка реализации зафиксированы отдельно в `SLICE_02_ACCEPTANCE_RECORD.md`.
 
 Входные approval records, предоставленные владельцем проекта в задании:
 
@@ -17,7 +17,7 @@
 | Backend | BACKEND SLICE 02 DESIGN: APPROVED |
 | Frontend review | REVIEW STATUS: PASS WITH NON-BLOCKING ISSUES |
 | Frontend design | FRONTEND SLICE 02 DESIGN: APPROVED |
-| Настоящий package | READY FOR RE-REVIEW; исходный FINAL REVIEW: BLOCKED по B-01; независимое approval исправленной редакции ещё не выполнено |
+| Настоящий package | APPROVED / FROZEN; исходный contract review был BLOCKED по B-01; после исправления targeted contract re-review завершён с PASS WITH NON-BLOCKING ISSUES |
 
 Названия и формы новых полей в §§8–13 — конкретизация integration contract этого package; они не выдаются за дословную цитату отдельного design-файла. Scoring semantics, domain entities и архитектурные решения не перепроектируются. Проверены актуальные нормативные Project files из §3. Старые pasted review notes не заменяют синхронизированные нормативные источники.
 
@@ -640,12 +640,12 @@ Compatibility-aware ensure §11 расширяет suitability check для но
 
 ### DOC-S02-01 — Existing acceptance traceability defect
 
-**Статус:** DOCUMENTATION FOLLOW-UP REQUIRED
+**Статус:** CLOSED
 **Источник:** `MVP_PASSPORT_AND_BACKLOG.md` §16.1, строка `AT-04 VALUE math`
 **Класс:** existing documentation traceability defect
 **Влияние:** non-blocking для Slice 02 design и настоящего contract package
 
-Текущая строка AT-04 ссылается на `TC-05 / TC-06`. В актуальном `TEST_CASES.md` они означают «Некорректный Excel» и «Нет целевого листа» и не проверяют VALUE math.
+До закрытия дефекта строка AT-04 ссылалась на `TC-05 / TC-06`. В актуальном `TEST_CASES.md` они означают «Некорректный Excel» и «Нет целевого листа» и не проверяют VALUE math.
 
 Однозначно определимое предполагаемое корректное соответствие:
 
@@ -653,7 +653,7 @@ Compatibility-aware ensure §11 расширяет suitability check для но
 |---|---|---|
 | AT-04 VALUE math | `TC-31` «Неполный VALUE» и `TC-32` «Полный VALUE» | known_sum, coverage, partial range и exact full score |
 
-Исправление ссылки выполняется отдельным documentation follow-up. В этой задаче `MVP_PASSPORT_AND_BACKLOG.md` не меняется, TEST_CASES numbering не меняется. §21 этого package использует актуальные TC IDs непосредственно. Другие строки старой traceability table не являются основанием для расширения Slice 02 или изменения источников в этой задаче.
+Ссылка AT-04 исправлена в `MVP_PASSPORT_AND_BACKLOG.md`: используются `TC-31 / TC-32`. Нумерация и содержание tests не менялись. §21 этого package использует те же актуальные TC IDs. Закрытие дефекта не расширяет Slice 02 и не изменяет нормативные источники.
 
 ## 25. Approval checklist
 
@@ -672,21 +672,21 @@ Compatibility-aware ensure §11 расширяет suitability check для но
 | Exact required fields | PASS: §§8–13 задают names/types/nullability/links; optional отдельно |
 | Scope не расширен | PASS: no interview/VERIFIED/matrix/export/matching/FTE/API redesign |
 | Invalid payload behavior | PASS: REQUIRED A–F cross-field checks; contradictory typed aggregates отклоняются атомарно; no synthetic null, repair, recalc или client snapshot selection |
-| Correction B-01 | IMPLEMENTED FOR RE-REVIEW: §§10, 17, AC-17 и T16/T29 согласованы; frontend defensive validation не повторяет Rule Engine; CT/FE negative fixtures заданы, runtime tests в этой document-only задаче не выполнялись |
-| Documentation follow-up | PASS: AT-04 defect зарегистрирован; sources/numbering не изменены |
-| Blocking integration questions | NONE: required application contract определён; approval review остаётся отдельным gate |
+| Correction B-01 | CLOSED: §§10, 17, AC-17 и T16/T29 согласованы; targeted contract re-review завершён с PASS WITH NON-BLOCKING ISSUES |
+| Documentation follow-up | CLOSED: DOC-S02-01 исправлен; AT-04 ссылается на TC-31 / TC-32, numbering не изменён |
+| Blocking integration questions | NONE: required application contract определён; package APPROVED / FROZEN |
 
-Self-check проверяет specification completeness и consistency с прочитанными normative sources и supplied approval decisions. Он не означает исполнения runtime tests, независимого final review или approval.
+Self-check проверял specification completeness и consistency с нормативными источниками и approval decisions. Последующие независимые review и implementation acceptance отражены в `SLICE_02_ACCEPTANCE_RECORD.md`.
 
-### 25.2. Независимый final review gate
+### 25.2. Завершённый независимый final review gate
 
-- [ ] Проверить delta без нарушения frozen ProcessCardView и broader domain norms.
-- [ ] Подтвердить marker semantics, immutable config/engine provenance и legacy snapshot transition.
-- [ ] Проверить backend-only arithmetic/eligibility/overlap/classification и ten-result atomicity.
-- [ ] Подтвердить V3 no-proxy, F1/F2–F5 Unknown semantics и pilot expected result.
-- [ ] Проверить lifecycle/retry/invalid payload, REQUIRED aggregate checks A–F, atomic rejection и separate concerns/DQ/technical errors; независимо подтвердить закрытие B-01.
-- [ ] Подтвердить acceptance matrix, Slice 01 regression и accessibility contract.
-- [ ] Принять DOC-S02-01 как non-blocking follow-up без изменений исходных файлов.
-- [ ] Выдать отдельное независимое решение по package; implementation approval не предполагается автоматически.
+- [x] Contract B-01 исправлен и проверен targeted re-review.
+- [x] Targeted contract re-review: PASS WITH NON-BLOCKING ISSUES.
+- [x] Implementation review и targeted fixes B-01/B-02 завершены.
+- [x] Targeted implementation re-review: PASS WITH NON-BLOCKING ISSUES.
+- [x] Final acceptance: PASS WITH NON-BLOCKING ISSUES.
+- [x] DOC-S02-01 закрыт отдельным documentation follow-up.
 
-**SLICE 02 CONTRACT PACKAGE: READY FOR RE-REVIEW**
+Подробная доказательная цепочка и quality gates: `SLICE_02_ACCEPTANCE_RECORD.md`.
+
+**SLICE 02 CONTRACT PACKAGE: APPROVED / FROZEN**
