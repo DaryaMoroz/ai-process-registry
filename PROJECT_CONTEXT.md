@@ -4,9 +4,9 @@
 
 **Статус документа:** актуальный источник принятых проектных решений
 
-**Активная production methodology runtime:** `1.1`
+**CURRENT / ACTIVE production methodology runtime:** `1.1`
 
-**Будущий baseline методики:** `2` существует отдельно и ещё не является runtime
+**FUTURE / NOT ACTIVE methodology baseline:** `Methodology v2 = FUTURE_NOT_ACTIVE`
 
 **Статус проекта:** `SLICE 01: FROZEN; SLICE 02: IMPLEMENTED / ACCEPTED / FROZEN`
 
@@ -14,7 +14,7 @@
 
 Документ фиксирует текущее согласованное состояние проекта. При принятии нового решения этот файл обновляется с заменой устаревшей формулировки; противоречащие варианты не сохраняются параллельно.
 
-Нормативные документы текущего этапа:
+Нормативные документы текущего runtime:
 
 1. `SCORING_ENGINE_SPEC.md` — единственный нормативный источник формальных правил scoring.
 2. `REGISTRY_MAPPING_MLH.md` — нормативный профиль импорта реестра МЛХ.
@@ -22,7 +22,19 @@
 4. `MVP_PASSPORT_AND_BACKLOG.md` — утверждённые scope, этапы и backlog MVP.
 5. `TECH_SPEC.md`, `REGISTRY_SCHEMA.md`, `TEST_CASES.md` — синхронизированные требования, концептуальная модель данных и приёмочные сценарии.
 
-При расхождении применяются: `SCORING_ENGINE_SPEC.md` для scoring, `REGISTRY_MAPPING_MLH.md` для Excel/mapping и `MVP_PASSPORT_AND_BACKLOG.md` для scope и этапов. YAML не вводит правила, которых нет в спецификации scoring.
+При расхождении в текущем runtime применяются: `SCORING_ENGINE_SPEC.md` для scoring, `REGISTRY_MAPPING_MLH.md` для Excel/mapping и `MVP_PASSPORT_AND_BACKLOG.md` для scope и этапов. YAML не вводит правила, которых нет в спецификации scoring.
+
+### 1.1. CURRENT / IMPLEMENTED и FUTURE / FROZEN BUT NOT IMPLEMENTED
+
+Текущее исполняемое состояние:
+
+`Methodology v1.1 → scoring_config_v1.1.yaml → Slice 01 + Slice 02 → existing backend/frontend`
+
+Будущий замороженный baseline:
+
+`SCORING_ENGINE_SPEC_V2_DRAFT.md → SCORING_CONFIG_V2_DESIGN.md → scoring_config_v2.0.yaml → [future runtime implementation]`
+
+Freeze Methodology v2 не меняет действующий runtime v1.1 и не является реализацией или активацией v2.
 
 ## 2. Цель MVP
 
@@ -208,14 +220,42 @@ Backend/Orchestrator управляет жизненным циклом загр
 
 ## 14. Текущая готовность
 
-Текущее состояние:
+### 14.1. CURRENT / IMPLEMENTED
 
 - Slice 01 — `FROZEN`;
 - Slice 02 — `IMPLEMENTED / ACCEPTED / FROZEN`, implementation commit `0257430e87ec37bb560993fd2cab7490b133b513`;
-- active production methodology runtime — `1.1`;
-- methodology v2 существует как отдельный будущий baseline и не используется текущим runtime;
-- следующий этап — design и review Slice 03 (`Evidence Collection & Human Confirmation`), а не реализация без утверждённого design.
+- Slice 02 реализует deterministic PRE-SCORE по Methodology v1.1 и не является реализацией Methodology v2;
+- действующая scoring methodology — `1.1`;
+- нормативные scoring-файлы текущего runtime — `SCORING_ENGINE_SPEC.md` и `scoring_config_v1.1.yaml`;
+- существующие backend и frontend работают по Methodology v1.1.
 
 Доказательная цепочка приёмки Slice 02 хранится в `SLICE_02_ACCEPTANCE_RECORD.md`. Контракт Slice 02 остаётся замороженным; Slice 03 пока имеет только planned backlog baseline.
+
+### 14.2. FUTURE / FROZEN BUT NOT IMPLEMENTED
+
+`Methodology v2 = FUTURE_NOT_ACTIVE`.
+
+| Артефакт | Зафиксированное состояние |
+|---|---|
+| `SCORING_ENGINE_SPEC_V2_DRAFT.md` | document version `0.4`; `FROZEN`; freeze date `2026-10-22`; normative scoring authority Methodology v2 |
+| `SCORING_CONFIG_V2_DESIGN.md` | version `0.1`; independent review `PASS`; `CONFIG_DESIGN_GAP: NONE`; mapping всех `90/90` rule IDs |
+| `scoring_config_v2.0.yaml` | config version `2.0.0`; `FROZEN`; freeze date `2026-10-23`; B-01/B-02 `CLOSED`; targeted regression `PASS`; rule catalog `90/90 PASS`; frozen SHA-256 `70bf57faf5e3aec82a72406d757c91ae9201dacca20c5bdc7ed0bdbba899763e` |
+
+Freeze v2 не означает, что backend исполняет `scoring_config_v2.0.yaml`, что runtime v2 существует, что runtime conformance завершён, что v1.1 заменена или что production activation выполнена. Runtime conformance v2 имеет статус `NOT_YET_COMPLETED`; production activation отсутствует.
+
+### 14.3. Следующий этап
+
+После frozen Methodology/Config v2 последовательно требуются:
+
+1. синхронизация технической документации;
+2. проектирование runtime v2;
+3. Config Loader;
+4. Config Validator;
+5. deterministic Rule Engine;
+6. methodology/conformance tests;
+7. интеграция с существующим приложением;
+8. отдельная migration/activation v1.1 → v2.
+
+Конкретная архитектура этих компонентов настоящим документом не проектируется.
 
 `DOCUMENTATION STATUS: POST-SLICE 02 CONSOLIDATED`
