@@ -4,13 +4,13 @@
 
 ## ИИ-агент анализа реестра процессов
 
-**Статус документа:** актуализирован после приёмки Slice 02
+**Статус документа:** синхронизирован после приёмки Slice 02 и freeze Methodology v2 baseline
 
-**Версия:** 1.0  
+**Версия:** 1.1
 **Целевой набор пилота:** лист `Лист3` файла `Реестр МЛХ.xlsm`  
 **Статус Rule Engine:** `METHODOLOGY 1.1 ACTIVE; SLICE 02 PRE-SCORE IMPLEMENTED / ACCEPTED / FROZEN`
 
-**Итоговый статус проекта:** `SLICE 02 IMPLEMENTED / ACCEPTED / FROZEN; SLICE 03 DESIGN PLANNED`
+**Итоговый статус проекта:** `SLICE 01/02 DONE / FROZEN; METHODOLOGY V2 FUTURE_NOT_ACTIVE; RUNTIME V2 DESIGN NEXT`
 
 ---
 
@@ -26,9 +26,11 @@
 6. утверждённых решений по профилю МЛХ, идентификаторам, evidence и чтению Excel;
 7. `Реестр МЛХ.xlsm` как официального read-only источника и тестовой книги.
 
-`REGISTRY_MAPPING_MLH.md` на момент подготовки документа отсутствует. Его создание включено в обязательный этап 0. Файл `МЛХ_последняя_редакция_с_изменениями.xlsx` не является официальным реестром и может использоваться только как дополнительный тестовый пример результатов обследования.
+`REGISTRY_MAPPING_MLH.md` создан и является нормативным профилем импорта МЛХ; повторное создание не требуется. Файл `МЛХ_последняя_редакция_с_изменениями.xlsx` не является официальным реестром и может использоваться только как дополнительный тестовый пример результатов обследования.
 
-При расхождении документов применяется приоритет, установленный в `PROJECT_CONTEXT.md`. Правила scoring определяются только `SCORING_ENGINE_SPEC.md`.
+При актуализации состояния и roadmap приоритет: `PROJECT_CONTEXT.md` → `TECH_SPEC.md` → frozen Methodology v2 package → настоящий backlog. Для текущего runtime scoring authority остаётся `SCORING_ENGINE_SPEC.md`, executable config — `scoring_config_v1.1.yaml`.
+
+Будущий normative baseline: `SCORING_ENGINE_SPEC_V2_DRAFT.md` v0.4 — FROZEN; `SCORING_CONFIG_V2_DESIGN.md` v0.1 — APPROVED / independent review PASS; `scoring_config_v2.0.yaml` v2.0.0 — FROZEN. Их исторические формулировки о следующих этапах читаются с учётом актуального `PROJECT_CONTEXT.md`. Они не заменяют текущий runtime v1.1. Methodology v2 = `FUTURE_NOT_ACTIVE`; runtime v2 ещё не реализован, runtime conformance = `NOT_YET_COMPLETED`, production activation отсутствует. Frozen Slice 02 contract — `SLICE_02_CONTRACT_PACKAGE.md`; evidence приёмки — `SLICE_02_ACCEPTANCE_RECORD.md`.
 
 ---
 
@@ -83,15 +85,15 @@ MVP не принимает решение вместо человека. Его
 - conflicts;
 - risks и blockers;
 - вопросы и ответы интервью;
-- история подтверждений и изменений.
+- история подтверждений и изменений;
+- формирование и исследование нескольких гипотез улучшения одного процесса, углублённый сбор и подтверждение данных. Это границы MVP, а не утверждение об их реализации в Slice 02.
 
 ## 2.3. Scoring
 
 - Rule Engine по `SCORING_ENGINE_SPEC.md`, версия 1.1;
-- десять утверждённых критериев;
-- PRE-SCORE;
-- INTERVIEW-SCORE;
-- VERIFIED SCORE;
+- десять утверждённых критериев VALUE V1–V5 и FEASIBILITY F1–F5;
+- текущая реализация Slice 02 — deterministic PRE-SCORE v1.1;
+- INTERVIEW-SCORE и VERIFIED-SCORE — целевые стадии дальнейшего развития MVP/runtime; в текущем Slice 02 они не реализованы;
 - независимые оси VALUE и FEASIBILITY;
 - `known_sum`, coverage и range при неполных данных;
 - отдельное хранение BLOCKER и RISK;
@@ -140,6 +142,7 @@ MVP не принимает решение вместо человека. Его
 - Multi-Agent архитектура;
 - BPMN;
 - моделирование AS IS или TO BE;
+- кадровая оптимизация и расчёт избытка или дефицита персонала;
 - автоматическое проектирование нового процесса;
 - полностью автономное интервью без участия пользователя;
 - автоматическое утверждение процесса к реализации;
@@ -468,91 +471,56 @@ blockers
 
 ---
 
-# 11. Порядок реализации MVP по этапам
+# 11. Текущий baseline и ближайший порядок работ
 
-## Этап 0. Нормативная и проектная база
+## 11.1. Завершённое состояние и статусы
 
-- создать `REGISTRY_MAPPING_MLH.md`;
-- синхронизировать `PROJECT_CONTEXT.md`, `TECH_SPEC.md`, `REGISTRY_SCHEMA.md` и `TEST_CASES.md` с утверждёнными решениями;
-- зафиксировать scoring configuration 1.1 в машиночитаемом виде;
-- подготовить репозиторий, правила ветвления, окружения и CI;
-- подготовить обезличенные test fixtures.
+| Область | Статус | Граница готовности |
+|---|---|---|
+| Slice 01 | DONE / FROZEN | Read-only ingestion → карточка → V1/V2 и неполная ось; исторический scope сохранён в §20 |
+| Slice 02 | DONE / IMPLEMENTED / ACCEPTED / FROZEN | Все десять deterministic PRE-SCORE evaluators v1.1 и Process Card; implementation commit `0257430e87ec37bb560993fd2cab7490b133b513` |
+| Runtime v1.1 | CURRENT / ACTIVE | `SCORING_ENGINE_SPEC.md` + `scoring_config_v1.1.yaml`; existing backend/frontend |
+| Scoring spec v2 v0.4 | FROZEN | `SCORING_ENGINE_SPEC_V2_DRAFT.md`; normative authority будущего scoring |
+| Config design v2 v0.1 | APPROVED / review PASS | `SCORING_CONFIG_V2_DESIGN.md`; CONFIG_DESIGN_GAP: NONE |
+| Config v2 v2.0.0 | FROZEN | `scoring_config_v2.0.yaml`; B-01/B-02 CLOSED, rule catalog 90/90 PASS |
+| Runtime v2 | PLANNED / NOT IMPLEMENTED | Freeze документов/config не является runtime implementation |
+| Runtime conformance v2 | PLANNED / NOT_YET_COMPLETED | Отдельный acceptance gate до integration |
+| Production activation v2 | PLANNED / NOT ACTIVE | Methodology v2 = FUTURE_NOT_ACTIVE; switch не выполнен |
 
-**Результат:** единый непротиворечивый пакет требований.
+DONE означает завершение указанного scope, а не всего epic или MVP. FROZEN / APPROVED описывает принятый артефакт и не означает ACTIVE runtime. NEXT — ближайшая задача; PLANNED — последующая работа с зависимостями; DEFERRED / OUT OF MVP — вне текущего MVP без отдельного решения.
 
-## Этап 1. Read-only ingestion
+## 11.2. Последовательность после Slice 02
 
-- загрузка Excel;
-- checksum и RegistryVersion;
-- чтение листов;
-- cached values без пересчёта;
-- mapping листа `Лист3`;
-- row classification;
-- создание SourceRow, Process и AnalysisUnit;
-- базовые Data Quality Issues.
+```text
+Slice 02 / v1.1 complete
+→ Methodology v2 baseline frozen
+→ runtime v2 preparation / design + review (NEXT)
+→ runtime v2 implementation (PLANNED)
+→ runtime conformance acceptance gate (PLANNED)
+→ integration with existing application (PLANNED)
+→ migration / explicit activation (PLANNED)
+```
 
-**Результат:** процессы из `Лист3` отображаются в системе и связаны с исходными координатами.
+Новые work packages не получают Slice numbers до утверждения runtime design: `TBD AFTER RUNTIME DESIGN`. Slice 01/02 не перенумеровываются. Ранее намеченный Slice 03 evidence loop остаётся неутверждённым PLANNED scope (§21), а не следующим implementation contract.
 
-## Этап 2. Первый вертикальный slice
+## 11.3. Work packages v2
 
-- карточка одного процесса;
-- Confirmed Registry facts;
-- Derived facts;
-- минимальное ядро Rule Engine: V1, V2 и расчёт неполной оси;
-- частичный PRE-SCORE;
-- coverage и ranges;
-- отображение missing facts;
-- один пользовательский flow от загрузки до объяснимого результата.
+| Workstream | Статус / зависимости | Что нужно сделать | Acceptance / gate |
+|---|---|---|---|
+| A. Runtime v2 design | NEXT; frozen v2 package | Создать и провести review `SCORING_RUNTIME_DESIGN_V2.md`: config loading/validation, deterministic execution, dependency evaluation, evidence/context handling, blocker evaluation, aggregation, evidence stages, compatibility, recalculation/reuse, error/fail-closed semantics | Design принят после review; scope и проверяемые implementation packages согласованы. Это DESIGN task; код и новые methodology decisions не входят |
+| B. Config Loader / Validator | PLANNED; после принятого A | Загрузка frozen `scoring_config_v2.0.yaml`; schema/structural validation; rule/reference validation; fail-closed behavior; version identity checks | Невалидный config отвергается целиком без defaults/частичной активации; version identities и ссылки проверяются по frozen package |
+| C. Deterministic Rule Engine v2 | PLANNED; после A и B | Исполнение frozen rules V1–V5, F1–F5; evidence/context, blockers, aggregation, evidence stages, dependency closure, compatibility, recalculation/reuse и invalidation | Реализация соответствует frozen package без изменения methodology ради удобства; реализация сама по себе не закрывает D и не активирует v2 |
+| D. Conformance testing | PLANNED; после B/C, до E | Normative cases frozen spec §20; boundary cases; B-01/B-02 regressions; deterministic repeatability; collection-order invariance; invalid config rejection; evidence/context/conflict cases; reuse/recalculation/invalidation | Отдельный runtime conformance acceptance gate: зафиксирован PASS для runtime по frozen spec/config. Static/config review PASS его не заменяет; до PASS integration не начинается |
+| E. Integration with existing application | PLANNED; только после D PASS | Интеграция runtime с existing backend; API/contracts при необходимости; frontend adaptation; сохранение historical v1.1 results | Интеграция проверена; historical v1.1 не перезаписывается и не получает silent relabel v1.1 → v2; готовность integration не является activation |
+| F. Migration / activation | PLANNED; после D и E | Подготовить migration strategy, activation criteria, rollback/compatibility и explicit switch v1.1 → v2 | Отдельное решение об activation после выполнения критериев; до явного switch v1.1 остаётся CURRENT, v2 — FUTURE_NOT_ACTIVE. Freeze config ≠ activation |
 
-**Результат:** работающий end-to-end контур без интервью.
+Таблица определяет задачи и acceptance boundaries, а не архитектуру, API/DTO, schema, loader technology или способ исполнения rules. Эти решения не принимаются ради roadmap и требуют отдельного design/review. В этой синхронизации runtime design не создаётся.
 
-## Этап 3. Полный Rule Engine 1.1
+## 11.4. Остальной MVP
 
-- все десять критериев;
-- evidence validation;
-- PRE / INTERVIEW / VERIFIED;
-- conflicts;
-- risks и blockers;
-- versioning и reproducibility;
-- unit и component tests.
+PLANNED: evidence collection / interview, human confirmation, гипотезы и углублённое обследование, LLM support, матрица, аналитический экспорт, access control, расширение аудита, hardening и итоговая приёмка. Выполненные части ingestion, карточки, PRE-SCORE и отображения результата остаются DONE; оставшиеся части общих epics не считаются завершёнными из-за приёмки Slice 02. Их уточнение и нарезка — после runtime design, с сохранением scope §§1–3.
 
-**Результат:** Rule Engine проходит acceptance-тесты методики.
-
-## Этап 4. Interview loop и LLM Agent
-
-- генерация вопросов;
-- интервью;
-- fact candidates;
-- human confirmation;
-- новый input snapshot;
-- повторный scoring;
-- объяснение изменений.
-
-**Результат:** missing fact проходит путь до подтверждённого evidence.
-
-## Этап 5. Список, матрица и экспорт
-
-- список всех процессов;
-- фильтрация и сортировка;
-- матрица Value × Feasibility;
-- визуализация incomplete scores;
-- экспорт аналитического результата;
-- human decision.
-
-**Результат:** эксперт может сравнить процессы и зафиксировать решение.
-
-## Этап 6. Hardening и приёмка
-
-- права доступа;
-- аудит;
-- обработка ошибок;
-- повторный запуск;
-- performance на пилотном объёме;
-- regression suite;
-- инструкции запуска;
-- итоговая демонстрация.
-
-**Результат:** MVP соответствует Definition of Done.
+DEFERRED / OUT OF MVP: BPMN, AS-IS, TO-BE, кадровая оптимизация/расчёт избытка или дефицита персонала, внешние production integrations и остальные исключения §3. Интеграция E означает existing application, а не добавление внешних production integrations.
 
 ---
 
@@ -568,73 +536,77 @@ blockers
 
 ## 12.2. Epic-level backlog
 
-| Epic | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет |
-|---|---|---|---|---|---|
-| E0 Требования | Создать и утвердить `REGISTRY_MAPPING_MLH.md` | BSA | Утверждённые решения | Описаны лист, заголовки, 19 колонок, row types, cached values и IDs | P0 |
-| E0 Требования | Синхронизировать нормативные документы | BSA | Паспорт MVP | Между документами нет противоречий по статусам, facts, IDs и Excel | P0 |
-| E0 Требования | Подготовить машиночитаемую scoring configuration 1.1 | BSA + Backend | `SCORING_ENGINE_SPEC.md` | Конфигурация проходит completeness validation | P0 |
-| E1 Ingestion | Реализовать read-only загрузку Excel | Backend | Mapping profile | Оригинал и checksum сохраняются, книга не изменяется | P0 |
-| E1 Ingestion | Реализовать Parser и выбор листа | Backend | Excel fixture | Доступны листы, default `Лист3`, пересчёт отсутствует | P0 |
-| E1 Ingestion | Реализовать Mapping и row classification | Backend + BSA | Parser, mapping profile | Только PROCESS попадает в scoring | P0 |
-| E2 Quality | Реализовать Data Quality rules | Backend + QA | Parsed rows | Missing, invalid, errors, ambiguity и conflicts отображаются | P0 |
-| E3 Cards | Создать Process Analysis Card и AnalysisUnit | Backend | Mapping | Каждая PROCESS row имеет прослеживаемую карточку | P0 |
-| E4 Scoring | Реализовать Rule Engine 1.1 | Backend / Rule Engine developer | Scoring config | Все критерии детерминированы и объяснимы | P0 |
-| E5 Interview | Реализовать questions и interview workflow | Backend + Frontend + LLM developer | Cards, DQ | Ответ не влияет на score до подтверждения | P0 |
-| E6 Confirmation | Реализовать human confirmation | Backend + Frontend | Interview | Каждое подтверждение имеет actor, source и audit event | P0 |
-| E7 Prioritization | Реализовать список и матрицу | Frontend + Backend + Designer | Scoring results | Оси раздельны, incomplete и blocker отображаются корректно | P0 |
-| E8 Export | Реализовать аналитический экспорт | Backend + Frontend | List, cards | Экспорт не меняет официальный реестр | P1 |
-| E9 Audit | Реализовать версии и аудит | Backend | Все изменяющие операции | Можно восстановить происхождение facts и scores | P0 |
-| E10 QA | Автоматизировать acceptance suite | QA + разработчики | Вертикальные slices | Все P0 acceptance-тесты проходят | P0 |
-| E11 Delivery | Подготовить запуск и демонстрацию | Backend + Frontend + QA | P0 backlog | Система разворачивается по инструкции | P0 |
+Статусы относятся к текущему scope; порядок ближайших v2 работ задаёт §11.3. PLANNED в широком epic не открывает повторно его завершённую часть Slice 01/02.
+
+| Epic | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет | Статус |
+|---|---|---|---|---|---|---|
+| E0 Требования | Создать и утвердить `REGISTRY_MAPPING_MLH.md` | BSA | Утверждённые решения | Описаны лист, заголовки, 19 колонок, row types, cached values и IDs | P0 | DONE — Slice 01/02 scope |
+| E0 Требования | Синхронизировать нормативные документы | BSA | Паспорт MVP | Между документами нет противоречий по статусам, facts, IDs и Excel | P0 | DONE — текущий baseline; дальнейшая синхронизация по принятым designs PLANNED |
+| E0 Требования | Подготовить машиночитаемую scoring configuration 1.1 | BSA + Backend | `SCORING_ENGINE_SPEC.md` | Конфигурация проходит completeness validation | P0 | DONE — Slice 01/02 scope |
+| E1 Ingestion | Реализовать read-only загрузку Excel | Backend | Mapping profile | Оригинал и checksum сохраняются, книга не изменяется | P0 | DONE — Slice 01/02 scope |
+| E1 Ingestion | Реализовать Parser и выбор листа | Backend | Excel fixture | Доступны листы, default `Лист3`, пересчёт отсутствует | P0 | DONE — Slice 01/02 scope |
+| E1 Ingestion | Реализовать Mapping и row classification | Backend + BSA | Parser, mapping profile | Только PROCESS попадает в scoring | P0 | DONE — Slice 01/02 scope |
+| E2 Quality | Реализовать Data Quality rules | Backend + QA | Parsed rows | Missing, invalid, errors, ambiguity и conflicts отображаются | P0 | PLANNED — расширение MVP; принятая часть Slice 01/02 DONE |
+| E3 Cards | Создать Process Analysis Card и AnalysisUnit | Backend | Mapping | Каждая PROCESS row имеет прослеживаемую карточку | P0 | DONE — Slice 01/02 scope |
+| E4 Scoring | Реализовать Rule Engine 1.1 | Backend / Rule Engine developer | Scoring config | Все критерии детерминированы и объяснимы | P0 | DONE — все PRE evaluators v1.1; INTERVIEW/VERIFIED workflow PLANNED |
+| E5 Interview | Реализовать questions и interview workflow | Backend + Frontend + LLM developer | Cards, DQ | Ответ не влияет на score до подтверждения | P0 | PLANNED |
+| E6 Confirmation | Реализовать human confirmation | Backend + Frontend | Interview | Каждое подтверждение имеет actor, source и audit event | P0 | PLANNED |
+| E7 Prioritization | Реализовать список и матрицу | Frontend + Backend + Designer | Scoring results | Оси раздельны, incomplete и blocker отображаются корректно | P0 | PLANNED — расширение MVP; принятая часть Slice 01/02 DONE |
+| E8 Export | Реализовать аналитический экспорт | Backend + Frontend | List, cards | Экспорт не меняет официальный реестр | P1 | PLANNED |
+| E9 Audit | Реализовать версии и аудит | Backend | Все изменяющие операции | Можно восстановить происхождение facts и scores | P0 | PLANNED — расширение MVP; принятая часть Slice 01/02 DONE |
+| E10 QA | Автоматизировать acceptance suite | QA + разработчики | Вертикальные slices | Все P0 acceptance-тесты проходят | P0 | PLANNED — расширение MVP; принятая часть Slice 01/02 DONE |
+| E11 Delivery | Подготовить запуск и демонстрацию | Backend + Frontend + QA | P0 backlog | Система разворачивается по инструкции | P0 | PLANNED — расширение MVP; принятая часть Slice 01/02 DONE |
 
 ---
 
-# 13. Backlog разработчика Rule Engine
+# 13. Исторический backlog Rule Engine v1.1 и оставшийся scope
 
-| ID | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет |
-|---|---|---|---|---|---|
-| RE-01 | Реализовать загрузку scoring configuration 1.1 | Rule Engine developer | Машиночитаемая конфигурация | Версия и все rule_id доступны движку | P0 |
-| RE-02 | Реализовать completeness validator | Rule Engine developer | RE-01 | При отсутствии критерия, шкалы, input или rule_id возвращается `SCORING_DISABLED` | P0 |
-| RE-03 | Реализовать validation facts и evidence | Rule Engine developer | Canonical fact contract | Inferred и Unknown не участвуют в formal scoring | P0 |
-| RE-04 | Реализовать V1 Frequency | Rule Engine developer | annual_instances | Проверены границы, zero и invalid inputs | P0 |
-| RE-05 | Реализовать V2 Labor и Derived annual_labor_hours | Rule Engine developer | annual_instances, hours_per_instance | Derived содержит rule version и input fact IDs | P0 |
-| RE-06 | Реализовать V3 только по Confirmed manual_work_share_percent | Rule Engine developer | Fact/evidence contract, scoring config | Допустимый Confirmed процент даёт score по шкале; отсутствующий, Unknown, неподтверждённый или недопустимый для стадии input даёт null с причиной; V3 proxy запрещён | P0 |
-| RE-07 | Реализовать V4 Repeatability | Rule Engine developer | Structured inputs | Количественный input имеет установленный приоритет | P0 |
-| RE-08 | Реализовать V5 Problematicity | Rule Engine developer | Structured inputs | Proxy и fallback применяются только по спецификации | P0 |
-| RE-09 | Реализовать F1 Data Availability | Rule Engine developer | F1 component facts | `confirmed_no_access = 1`, `unknown = null`, итог по min компонентов | P0 |
-| RE-10 | Реализовать F2 Integration Simplicity | Rule Engine developer | Integration facts | При пересечении применяется минимальный подтверждённый score | P0 |
-| RE-11 | Реализовать F3 Technical Feasibility | Rule Engine developer | Technical expert facts | VERIFIED требует допустимого технического источника | P0 |
-| RE-12 | Реализовать F4 MVP 3 Months | Rule Engine developer | MVP scope facts | Все обязательные inputs известны для VERIFIED | P0 |
-| RE-13 | Реализовать F5 Measurability | Rule Engine developer | KPI facts | Blocker хранится отдельно от score | P0 |
-| RE-14 | Реализовать axis aggregation | Rule Engine developer | RE-04–RE-13 | Full score только при пяти известных criteria; иначе known_sum, coverage, range | P0 |
-| RE-15 | Реализовать PRE / INTERVIEW / VERIFIED gate | Rule Engine developer | Evidence validator | VERIFIED невозможен при null или scoring conflict | P0 |
-| RE-16 | Реализовать conflict handling | Rule Engine developer | Conflict contract | Движок не выбирает источник самостоятельно | P0 |
-| RE-17 | Реализовать Risk / Blocker evaluation | Rule Engine developer | Structured restrictions | Blocker не меняет score и может сосуществовать с VERIFIED | P0 |
-| RE-18 | Реализовать criterion explanation payload | Rule Engine developer | Criterion results | Для каждого score доступны rule_id, evidence и applied rule | P0 |
-| RE-19 | Реализовать snapshot/version metadata | Rule Engine developer | Backend snapshot | Результат содержит methodology version и input snapshot | P0 |
-| RE-20 | Создать unit tests границ всех шкал | Rule Engine developer + QA | RE-04–RE-13 | Проверены значения на границе, ниже и выше границы | P0 |
-| RE-21 | Создать reproducibility tests | Rule Engine developer + QA | RE-19 | Одинаковый snapshot всегда даёт одинаковый JSON result | P0 |
-| RE-22 | Создать regression fixtures методики 1.1 | QA + BSA | Утверждённые примеры | Изменение config обнаруживается тестами и версией | P0 |
+RE-01–RE-22 сохраняют исходную нумерацию. DONE ограничен принятым deterministic PRE-SCORE Slice 02; это не утверждение о готовности interview/confirmation и VERIFIED workflow или о реализации v2. Новые v2 задачи вынесены в §11.3; v1.1 задачи не нужно реализовывать заново.
+
+| ID | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет | Статус |
+|---|---|---|---|---|---|---|
+| RE-01 | Реализовать загрузку scoring configuration 1.1 | Rule Engine developer | Машиночитаемая конфигурация | Версия и все rule_id доступны движку | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-02 | Реализовать completeness validator | Rule Engine developer | RE-01 | При отсутствии критерия, шкалы, input или rule_id возвращается `SCORING_DISABLED` | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-03 | Реализовать validation facts и evidence | Rule Engine developer | Canonical fact contract | Inferred и Unknown не участвуют в formal scoring | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-04 | Реализовать V1 Frequency | Rule Engine developer | annual_instances | Проверены границы, zero и invalid inputs | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-05 | Реализовать V2 Labor и Derived annual_labor_hours | Rule Engine developer | annual_instances, hours_per_instance | Derived содержит rule version и input fact IDs | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-06 | Реализовать V3 только по Confirmed manual_work_share_percent | Rule Engine developer | Fact/evidence contract, scoring config | Допустимый Confirmed процент даёт score по шкале; отсутствующий, Unknown, неподтверждённый или недопустимый для стадии input даёт null с причиной; V3 proxy запрещён | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-07 | Реализовать V4 Repeatability | Rule Engine developer | Structured inputs | Количественный input имеет установленный приоритет | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-08 | Реализовать V5 Problematicity | Rule Engine developer | Structured inputs | Proxy и fallback применяются только по спецификации | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-09 | Реализовать F1 Data Availability | Rule Engine developer | F1 component facts | `confirmed_no_access = 1`, `unknown = null`, итог по min компонентов | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-10 | Реализовать F2 Integration Simplicity | Rule Engine developer | Integration facts | При пересечении применяется минимальный подтверждённый score | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-11 | Реализовать F3 Technical Feasibility | Rule Engine developer | Technical expert facts | VERIFIED требует допустимого технического источника | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-12 | Реализовать F4 MVP 3 Months | Rule Engine developer | MVP scope facts | Все обязательные inputs известны для VERIFIED | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-13 | Реализовать F5 Measurability | Rule Engine developer | KPI facts | Blocker хранится отдельно от score | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-14 | Реализовать axis aggregation | Rule Engine developer | RE-04–RE-13 | Full score только при пяти известных criteria; иначе known_sum, coverage, range | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-15 | Реализовать PRE / INTERVIEW / VERIFIED gate | Rule Engine developer | Evidence validator | VERIFIED невозможен при null или scoring conflict | P0 | PLANNED — INTERVIEW/VERIFIED workflow; PRE gate DONE |
+| RE-16 | Реализовать conflict handling | Rule Engine developer | Conflict contract | Движок не выбирает источник самостоятельно | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-17 | Реализовать Risk / Blocker evaluation | Rule Engine developer | Structured restrictions | Blocker не меняет score и может сосуществовать с VERIFIED | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-18 | Реализовать criterion explanation payload | Rule Engine developer | Criterion results | Для каждого score доступны rule_id, evidence и applied rule | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-19 | Реализовать snapshot/version metadata | Rule Engine developer | Backend snapshot | Результат содержит methodology version и input snapshot | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-20 | Создать unit tests границ всех шкал | Rule Engine developer + QA | RE-04–RE-13 | Проверены значения на границе, ниже и выше границы | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-21 | Создать reproducibility tests | Rule Engine developer + QA | RE-19 | Одинаковый snapshot всегда даёт одинаковый JSON result | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
+| RE-22 | Создать regression fixtures методики 1.1 | QA + BSA | Утверждённые примеры | Изменение config обнаруживается тестами и версией | P0 | DONE — в пределах PRE-SCORE v1.1 / Slice 02 |
 
 ---
 
 # 14. Backlog разработчика LLM Agent
 
-| ID | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет |
-|---|---|---|---|---|---|
-| LA-01 | Определить строгий входной контекст LLM Agent | LLM developer + BSA | Card contract | В prompt не передаются лишние данные и formal rules для изменения | P0 |
-| LA-02 | Определить structured output schema | LLM developer + Backend | Fact/Question contracts | Невалидный ответ не записывается как fact | P0 |
-| LA-03 | Формировать вопросы по missing facts | LLM developer | Rule Engine missing_facts | Каждый вопрос связан с field, criterion, reason и priority | P0 |
-| LA-04 | Формировать вопросы по conflicts | LLM developer | Conflict contract | Вопрос показывает варианты без самостоятельного выбора истины | P0 |
-| LA-05 | Формировать вопросы по risks и blockers | LLM developer | Risk contract | Указана рекомендуемая роль респондента | P0 |
-| LA-06 | Структурировать Interview Answer в FactCandidate | LLM developer | Interview workflow | Candidate содержит value, unit, source fragment и confidence | P0 |
-| LA-07 | Гарантировать маркировку LLM outputs как Inferred | LLM developer + Backend | LA-02 | До подтверждения candidate не допускается в scoring | P0 |
-| LA-08 | Реализовать explanation draft | LLM developer | Rule Engine result | Объяснение не меняет score и ссылается на criterion results | P1 |
-| LA-09 | Реализовать guardrails против выдуманных facts | LLM developer + QA | Output schema | При отсутствии evidence возвращается hypothesis или missing, не Confirmed | P0 |
-| LA-10 | Реализовать обработку недоступности LLM | Backend + LLM developer | Orchestrator | Parser, cards и Rule Engine продолжают работать без LLM | P0 |
-| LA-11 | Создать prompt regression set | LLM developer + QA + BSA | Типовые интервью | Структура ответов стабильна на контрольном наборе | P0 |
-| LA-12 | Проверить утечку служебных и персональных данных | LLM developer + QA | Security rules | В модель уходит только разрешённый контекст | P0 |
-| LA-13 | Реализовать наблюдаемость вызовов | LLM developer + Backend | Audit | Сохраняются prompt version, model, latency и result status без скрытых score changes | P1 |
+| ID | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет | Статус |
+|---|---|---|---|---|---|---|
+| LA-01 | Определить строгий входной контекст LLM Agent | LLM developer + BSA | Card contract | В prompt не передаются лишние данные и formal rules для изменения | P0 | PLANNED |
+| LA-02 | Определить structured output schema | LLM developer + Backend | Fact/Question contracts | Невалидный ответ не записывается как fact | P0 | PLANNED |
+| LA-03 | Формировать вопросы по missing facts | LLM developer | Rule Engine missing_facts | Каждый вопрос связан с field, criterion, reason и priority | P0 | PLANNED |
+| LA-04 | Формировать вопросы по conflicts | LLM developer | Conflict contract | Вопрос показывает варианты без самостоятельного выбора истины | P0 | PLANNED |
+| LA-05 | Формировать вопросы по risks и blockers | LLM developer | Risk contract | Указана рекомендуемая роль респондента | P0 | PLANNED |
+| LA-06 | Структурировать Interview Answer в FactCandidate | LLM developer | Interview workflow | Candidate содержит value, unit, source fragment и confidence | P0 | PLANNED |
+| LA-07 | Гарантировать маркировку LLM outputs как Inferred | LLM developer + Backend | LA-02 | До подтверждения candidate не допускается в scoring | P0 | PLANNED |
+| LA-08 | Реализовать explanation draft | LLM developer | Rule Engine result | Объяснение не меняет score и ссылается на criterion results | P1 | PLANNED |
+| LA-09 | Реализовать guardrails против выдуманных facts | LLM developer + QA | Output schema | При отсутствии evidence возвращается hypothesis или missing, не Confirmed | P0 | PLANNED |
+| LA-10 | Реализовать обработку недоступности LLM | Backend + LLM developer | Orchestrator | Parser, cards и Rule Engine продолжают работать без LLM | P0 | PLANNED |
+| LA-11 | Создать prompt regression set | LLM developer + QA + BSA | Типовые интервью | Структура ответов стабильна на контрольном наборе | P0 | PLANNED |
+| LA-12 | Проверить утечку служебных и персональных данных | LLM developer + QA | Security rules | В модель уходит только разрешённый контекст | P0 | PLANNED |
+| LA-13 | Реализовать наблюдаемость вызовов | LLM developer + Backend | Audit | Сохраняются prompt version, model, latency и result status без скрытых score changes | P1 | PLANNED |
 
 LLM Agent не является отдельной группой агентов. В MVP используется один управляемый LLM-контур с несколькими типами заданий.
 
@@ -642,40 +614,42 @@ LLM Agent не является отдельной группой агентов
 
 # 15. Общий backlog Frontend / Backend
 
-| ID | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет |
-|---|---|---|---|---|---|
-| FB-01 | Создать проектный skeleton и локальный запуск | Backend + Frontend | Репозиторий | Команда поднимает систему по одной инструкции | P0 |
-| FB-02 | Реализовать хранение оригинального файла и checksum | Backend | File storage decision | Повторная проверка подтверждает неизменность | P0 |
-| FB-03 | Реализовать Registry Parser | Backend | Mapping profile | `.xlsx/.xlsm` читаются без пересчёта | P0 |
-| FB-04 | Реализовать выбор листа и профиль МЛХ | Backend + Frontend | Parser | Default `Лист3`, пользователь может выбрать другой лист | P0 |
-| FB-05 | Реализовать source cell representation | Backend | Parser | Сохраняются raw, formula, cached, normalized и coordinate | P0 |
-| FB-06 | Реализовать row classification | Backend | Mapping | UNKNOWN создаёт issue и не получает scoring | P0 |
-| FB-07 | Реализовать process identity | Backend | Mapping | source_row_id, process_id и fingerprint разделены | P0 |
-| FB-08 | Реализовать Process Analysis Card | Backend | Entities contract | Карточка агрегирует данные без изменения source | P0 |
-| FB-09 | Реализовать первичную AnalysisUnit | Backend | Card | Одна scoring unit создаётся на PROCESS row | P0 |
-| FB-10 | Реализовать Data Quality pipeline | Backend | Parser, Mapping | Issues сохраняются и доступны UI | P0 |
-| FB-11 | Реализовать orchestration PRE-SCORE | Backend | Rule Engine | Snapshot создаётся перед каждым расчётом | P0 |
-| FB-12 | Реализовать экран загрузки | Frontend + Designer | Parser flow | Пользователь видит profile, sheet и validation result | P0 |
-| FB-13 | Реализовать экран списка процессов | Frontend + Designer | Card summary | Доступны score/range, coverage и filters | P0 |
-| FB-14 | Реализовать карточку процесса | Frontend + Designer | Card view model | Видны source, facts, criteria, evidence и issues | P0 |
-| FB-15 | Реализовать экран интервью | Frontend + Backend + Designer | Questions | Ответ связан с вопросом, респондентом и источником | P0 |
-| FB-16 | Реализовать подтверждение FactCandidate | Frontend + Backend | Confirmation rules | Confirm, correct, reject и request clarification аудируются | P0 |
-| FB-17 | Реализовать повторный scoring | Backend | Confirmation | Новое подтверждение создаёт новый snapshot, старый сохраняется | P0 |
-| FB-18 | Реализовать матрицу Value × Feasibility | Frontend + Designer | Full axis results | Нет замены матрицы суммой /50 | P0 |
-| FB-19 | Реализовать отображение incomplete results | Frontend | Range contract | Null не показывается как 0; range виден пользователю | P0 |
-| FB-20 | Реализовать отображение blocker/risk | Frontend | Risk contract | Blocker визуально отделён от score | P0 |
-| FB-21 | Реализовать аналитический экспорт | Backend + Frontend | Result views | Экспорт содержит IDs, axes, coverage, status, blockers и risks | P1 |
-| FB-22 | Реализовать basic access control | Backend + Frontend | Roles | Только разрешённые роли подтверждают facts и меняют config | P0 |
-| FB-23 | Реализовать audit trail | Backend | Actor context | История значимых действий доступна для проверки | P0 |
-| FB-24 | Реализовать обработку ошибок и повтор операции | Backend + Frontend | Component errors | Частичный сбой не выдаётся как успешный анализ | P0 |
-| FB-25 | Реализовать сопоставление новой версии по fingerprint | Backend | Identity rules | Неоднозначное совпадение не разрешается автоматически | P1 |
-| FB-26 | Реализовать декомпозицию AnalysisUnit | Backend + Frontend | Interview loop | Child units не изменяют исходную строку | P1 |
-| FB-27 | Подготовить health checks и журналирование | Backend | Runtime | Состояние компонентов диагностируется | P1 |
-| FB-28 | Провести accessibility и usability review | Designer + QA + Frontend | Основные экраны | Основной flow понятен аналитику без технических знаний | P1 |
+| ID | User Story / Task | Исполнитель | Зависимости | Acceptance criteria | Приоритет | Статус |
+|---|---|---|---|---|---|---|
+| FB-01 | Создать проектный skeleton и локальный запуск | Backend + Frontend | Репозиторий | Команда поднимает систему по одной инструкции | P0 | DONE — принятый scope Slice 01/02 |
+| FB-02 | Реализовать хранение оригинального файла и checksum | Backend | File storage decision | Повторная проверка подтверждает неизменность | P0 | DONE — принятый scope Slice 01/02 |
+| FB-03 | Реализовать Registry Parser | Backend | Mapping profile | `.xlsx/.xlsm` читаются без пересчёта | P0 | DONE — принятый scope Slice 01/02 |
+| FB-04 | Реализовать выбор листа и профиль МЛХ | Backend + Frontend | Parser | Default `Лист3`, пользователь может выбрать другой лист | P0 | DONE — принятый scope Slice 01/02 |
+| FB-05 | Реализовать source cell representation | Backend | Parser | Сохраняются raw, formula, cached, normalized и coordinate | P0 | DONE — принятый scope Slice 01/02 |
+| FB-06 | Реализовать row classification | Backend | Mapping | UNKNOWN создаёт issue и не получает scoring | P0 | DONE — принятый scope Slice 01/02 |
+| FB-07 | Реализовать process identity | Backend | Mapping | source_row_id, process_id и fingerprint разделены | P0 | DONE — принятый scope Slice 01/02 |
+| FB-08 | Реализовать Process Analysis Card | Backend | Entities contract | Карточка агрегирует данные без изменения source | P0 | DONE — принятый scope Slice 01/02 |
+| FB-09 | Реализовать первичную AnalysisUnit | Backend | Card | Одна scoring unit создаётся на PROCESS row | P0 | DONE — принятый scope Slice 01/02 |
+| FB-10 | Реализовать Data Quality pipeline | Backend | Parser, Mapping | Issues сохраняются и доступны UI | P0 | DONE — принятый scope Slice 01/02 |
+| FB-11 | Реализовать orchestration PRE-SCORE | Backend | Rule Engine | Snapshot создаётся перед каждым расчётом | P0 | DONE — принятый scope Slice 01/02 |
+| FB-12 | Реализовать экран загрузки | Frontend + Designer | Parser flow | Пользователь видит profile, sheet и validation result | P0 | DONE — принятый scope Slice 01/02 |
+| FB-13 | Реализовать экран списка процессов | Frontend + Designer | Card summary | Доступны score/range, coverage и filters | P0 | PLANNED — полный scope; часть Slice 01/02 DONE |
+| FB-14 | Реализовать карточку процесса | Frontend + Designer | Card view model | Видны source, facts, criteria, evidence и issues | P0 | DONE — принятый scope Slice 01/02 |
+| FB-15 | Реализовать экран интервью | Frontend + Backend + Designer | Questions | Ответ связан с вопросом, респондентом и источником | P0 | PLANNED |
+| FB-16 | Реализовать подтверждение FactCandidate | Frontend + Backend | Confirmation rules | Confirm, correct, reject и request clarification аудируются | P0 | PLANNED |
+| FB-17 | Реализовать повторный scoring | Backend | Confirmation | Новое подтверждение создаёт новый snapshot, старый сохраняется | P0 | PLANNED |
+| FB-18 | Реализовать матрицу Value × Feasibility | Frontend + Designer | Full axis results | Нет замены матрицы суммой /50 | P0 | PLANNED |
+| FB-19 | Реализовать отображение incomplete results | Frontend | Range contract | Null не показывается как 0; range виден пользователю | P0 | DONE — принятый scope Slice 01/02 |
+| FB-20 | Реализовать отображение blocker/risk | Frontend | Risk contract | Blocker визуально отделён от score | P0 | DONE — принятый scope Slice 01/02 |
+| FB-21 | Реализовать аналитический экспорт | Backend + Frontend | Result views | Экспорт содержит IDs, axes, coverage, status, blockers и risks | P1 | PLANNED |
+| FB-22 | Реализовать basic access control | Backend + Frontend | Roles | Только разрешённые роли подтверждают facts и меняют config | P0 | PLANNED |
+| FB-23 | Реализовать audit trail | Backend | Actor context | История значимых действий доступна для проверки | P0 | PLANNED — полный scope; часть Slice 01/02 DONE |
+| FB-24 | Реализовать обработку ошибок и повтор операции | Backend + Frontend | Component errors | Частичный сбой не выдаётся как успешный анализ | P0 | PLANNED — полный scope; часть Slice 01/02 DONE |
+| FB-25 | Реализовать сопоставление новой версии по fingerprint | Backend | Identity rules | Неоднозначное совпадение не разрешается автоматически | P1 | PLANNED |
+| FB-26 | Реализовать декомпозицию AnalysisUnit | Backend + Frontend | Interview loop | Child units не изменяют исходную строку | P1 | PLANNED |
+| FB-27 | Подготовить health checks и журналирование | Backend | Runtime | Состояние компонентов диагностируется | P1 | PLANNED |
+| FB-28 | Провести accessibility и usability review | Designer + QA + Frontend | Основные экраны | Основной flow понятен аналитику без технических знаний | P1 | PLANNED |
 
 ---
 
 # 16. Набор acceptance-тестов
+
+Таблицы §16 сохраняют acceptance baseline v1.1 и полного MVP; наличие сценария здесь не означает, что весь MVP уже принят. Runtime conformance v2 — отдельный gate D (§11.3), основанный на frozen v2 spec/config, а не на переименовании v1.1 tests.
 
 ## 16.1. Трассировка исходных TEST_CASES
 
@@ -738,7 +712,7 @@ LLM Agent не является отдельной группой агентов
 
 # 17. Definition of Done MVP
 
-MVP считается готовым, когда одновременно выполнены условия:
+Условия ниже сохраняют baseline приёмки MVP v1.1. Они не означают готовности всего MVP после Slice 02 и не разрешают activation v2; v2 дополнительно требует последовательных gates A–F (§11.3). MVP считается готовым, когда одновременно выполнены условия:
 
 1. Все P0 backlog items завершены.
 2. Официальный файл сохраняется без изменений; checksum подтверждён.
@@ -784,9 +758,9 @@ MVP считается готовым, когда одновременно вы�
 
 ---
 
-# 19. Что должно быть готово до перехода в Codex
+# 19. Исторические prerequisites первого handoff в Codex
 
-Для начала разработки в Codex должны быть доступны:
+Ниже сохранён checklist первого handoff; он не является новым NEXT backlog после завершённых Slice 01/02. Текущий следующий шаг задаёт §11.3 A. Для начала разработки требовались:
 
 1. `MVP_PASSPORT_AND_BACKLOG.md`;
 2. актуальный `PROJECT_CONTEXT.md`;
@@ -801,7 +775,7 @@ MVP считается готовым, когда одновременно вы�
 11. выбранный репозиторий и базовые правила работы команды;
 12. первый вертикальный slice с чёткими acceptance criteria.
 
-Документы `PROJECT_CONTEXT.md`, `TECH_SPEC.md`, `REGISTRY_SCHEMA.md` и `TEST_CASES.md` необходимо синхронизировать с уже утверждёнными решениями. Это обязательная задача этапа 0, но не новая методическая неопределённость.
+Исходная синхронизация документов и baseline v1.1 выполнены. Дальнейшая документация актуализируется по отдельно принятым designs без изменения frozen methodology/config; это не повторное создание этапа 0.
 
 Рекомендуемая модель для первого запроса в Codex/WORK:
 
@@ -887,13 +861,13 @@ MLH Registry → One Process Card → PRE-SCORE
 - интеграционный контракт Rule Engine и механику неполной оси;
 - объяснимый результат.
 
-После Slice 01 детерминированный PRE-SCORE был расширен и принят в Slice 02. Дальнейший evidence-collection loop относится к planned design Slice 03 из §21.
+После Slice 01 детерминированный PRE-SCORE был расширен и принят в Slice 02. Дальнейший evidence-collection loop сохраняется как PLANNED scope в §21; ближайший шаг — runtime v2 design (§11.3 A).
 
 ---
 
 # 21. Planned Slice 03 baseline — неутверждённый design
 
-**Slice 03 — Evidence Collection & Human Confirmation** находится на стадии проектирования. Этот backlog baseline является planned scope, не утверждённым и не замороженным контрактом; реализация не должна начинаться до отдельного design и review.
+**Slice 03 — Evidence Collection & Human Confirmation** сохраняется как ранее намеченный PLANNED design baseline; это не текущий NEXT шаг. Его место и окончательная нарезка — `TBD AFTER RUNTIME DESIGN`, без перенумерации завершённых Slice 01/02. Этот backlog baseline является planned scope, не утверждённым и не замороженным контрактом; реализация не должна начинаться до отдельного design и review.
 
 Предполагаемые каналы сбора evidence:
 
@@ -916,7 +890,7 @@ source → FactCandidate → Human Confirmation → Confirmed Fact → new Score
 - DOCX extraction;
 - interview questions;
 - human-readable explanations;
-- пересмотр названия `INTERVIEW_SCORE`, поскольку данные могут поступать не только из интервью.
+- отображение данных из разных evidence channels без изменения нормативных evidence stages; новое название или semantics `INTERVIEW_SCORE` этим backlog не утверждаются.
 
 Эти пункты не являются frozen contract Slice 03 и не меняют runtime или semantics Slice 01/02.
 
@@ -925,8 +899,13 @@ source → FactCandidate → Human Confirmation → Confirmed Fact → new Score
 # Итоговый статус
 
 ```text
-SLICE 02 IMPLEMENTED / ACCEPTED / FROZEN
-SLICE 03 DESIGN PLANNED / NOT APPROVED
+SLICE 01 / SLICE 02: DONE / FROZEN (SLICE 02 IMPLEMENTED / ACCEPTED)
+CURRENT RUNTIME: METHODOLOGY v1.1
+METHODOLOGY v2: FUTURE_NOT_ACTIVE; SPEC / CONFIG FROZEN; CONFIG DESIGN APPROVED
+NEXT: SCORING_RUNTIME_DESIGN_V2.md — DESIGN + REVIEW
+PLANNED: LOADER / VALIDATOR → ENGINE → CONFORMANCE GATE → INTEGRATION → MIGRATION / ACTIVATION
+RUNTIME v2: NOT IMPLEMENTED; CONFORMANCE: NOT_YET_COMPLETED; PRODUCTION ACTIVATION: ABSENT
+SLICE 03 EVIDENCE LOOP: PLANNED / NOT APPROVED / TBD AFTER RUNTIME DESIGN
 ```
 
-Следующий этап — проектирование и review Slice 03. Реализация Slice 03 до утверждения отдельного design не разрешена.
+Следующий этап — создание и review runtime v2 design. Frozen package не активирует v2. Настоящая синхронизация меняет только backlog; runtime design, production-код, tests, contracts и frozen-файлы не создаются и не изменяются.
